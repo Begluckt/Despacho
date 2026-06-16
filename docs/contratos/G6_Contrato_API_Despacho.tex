@@ -125,15 +125,14 @@
   \textbf{Proyecto:}     & Marketplace en la Nube \\
   \textbf{Versión API:}  & \texttt{v1.0} \\
   \textbf{Base URL:}     & \texttt{https://g6-despacho.onrender.com/api/v1} \\
-  \textbf{Fecha:}        & 11 de Junio de 2026 \\
-  \textbf{Estado:}       & Borrador para revisión con G5 y G9 \\
+  \textbf{Fecha:}        & 16 de Junio de 2026 \\
 \end{tabular}
 
 \vfill
 
-\begin{warningbox}[title={\faExclamationCircle\quad Para revisión conjunta}]
-  Este documento debe ser validado con los equipos de \textbf{G5 (Pedidos)}
-  y \textbf{G9 (Notificaciones)} antes de comenzar la implementación.
+\begin{warningbox}[title={\faExclamationCircle\quad Documento de referencia}]
+  Este contrato ha sido validado con los equipos de \textbf{G5 (Pedidos)}
+  y \textbf{G8 (Pago Simulado y Notificaciones)}.
   Cualquier cambio acordado se reflejará en la versión 1.1.
 \end{warningbox}
 
@@ -147,7 +146,55 @@
 \part{Contrato REST API}
 % ══════════════════════════════════════════════════════════════════════════════
 
+\section{Responsabilidad del Servicio y Dominio}
+
+\subsection{Objetivo}
+
+El servicio de \textbf{Despacho y Logística (G6)} es responsable de gestionar el ciclo de vida completo de los envíos dentro del ecosistema del Marketplace en la Nube.
+
+\subsection{Qué resuelve este servicio}
+
+\begin{itemize}[noitemsep]
+  \item Crear despachos a partir de pedidos confirmados por G5.
+  \item Asignar un identificador único (\texttt{shipment\_id}) a cada envío.
+  \item Gestionar la máquina de estados del envío (\texttt{PENDING} $\rightarrow$ \texttt{IN\_TRANSIT} $\rightarrow$ \texttt{DELIVERED}, etc.).
+  \item Publicar eventos de cambio de estado para que G8 notifique al usuario y G7 genere reportes.
+  \item Exponer endpoints REST para consulta de tracking (G1) y listados (G7).
+  \item Almacenar y administrar la tabla \texttt{shipments} como fuente de verdad.
+\end{itemize}
+
+\subsection{Qué queda fuera de alcance}
+
+\begin{itemize}[noitemsep]
+  \item \textbf{Gestión de pedidos:} responsabilidad de G5 (Order Management).
+  \item \textbf{Procesamiento de pagos:} responsabilidad de G8 (Pago Simulado).
+  \item \textbf{Generación de reportes:} responsabilidad de G7 (Reportería y Batch).
+  \item \textbf{Interfaz de usuario:} responsabilidad de G1 (Frontend).
+  \item \textbf{Autenticación y autorización:} delegada a G1/G8.
+\end{itemize}
+
+\subsection{Dueño del Dato (Ownership)}
+
+\begin{table}[h!]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{l l l X}
+  \toprule
+  \textbf{Dato} & \textbf{Dueño} & \textbf{Acceso G6} & \textbf{Observación} \\
+  \midrule
+  \texttt{shipments}        & G6 (propio)  & Lectura/Escritura & Fuente de verdad del envío. \\
+  \texttt{order\_id}        & G5 (ajeno)   & Solo lectura      & Recibido en el POST, nunca modificado. \\
+  \texttt{customer\_name}   & G5 (ajeno)   & Solo lectura      & Copiado del pedido para el envío. \\
+  \texttt{payment\_status}  & G8 (ajeno)   & No accede          & G6 no consulta ni modifica pagos. \\
+  \texttt{report\_data}     & G7 (ajeno)   & No accede          & G7 consume datos vía REST/eventos. \\
+  \bottomrule
+\end{tabularx}
+\caption{Ownership de datos: qué datos son propios y cuáles son consultados.}
+\end{table}
+
+
 \section{Información General}
+\label{sec:general-info}
 
 \begin{table}[h!]
 \centering
@@ -169,6 +216,13 @@
 \subsection{Convenciones}
 
 \begin{itemize}[noitemsep]
+  \item Todos los endpoints requieren los siguientes headers obligatorios:
+  \begin{itemize}
+    \item \texttt{X-Request-Id}: uuid
+    \item \texttt{X-Correlation-Id}: uuid
+    \item \texttt{X-Consumer}: group-name
+    \item \texttt{Idempotency-Key}: uuid
+  \end{itemize}
   \item Todos los endpoints retornan \texttt{application/json}.
   \item Las fechas usan formato ISO 8601: \texttt{YYYY-MM-DDTHH:mm:ssZ}.
   \item Los IDs de shipment usan formato \texttt{SHP-<uuid>} (generados por nuestro servicio).
@@ -188,7 +242,7 @@
   \httpmethod{get}{GET}     & \texttt{/shipments/\{id\}}           & Consultar estado de un despacho  & G1, G5 \\
   \httpmethod{get}{GET}     & \texttt{/shipments?order\_id=\{x\}}  & Buscar despacho por pedido       & G5 \\
   \httpmethod{patch}{PATCH} & \texttt{/shipments/\{id\}}           & Actualizar estado del despacho   & Interno \\
-  \httpmethod{get}{GET}     & \texttt{/shipments}                  & Listar todos los despachos       & G10 \\
+  \httpmethod{get}{GET}     & \texttt{/shipments}                  & Listar todos los despachos       & G7 \\
   \httpmethod{get}{GET}     & \texttt{/health}                     & Health check del servicio        & Todos \\
   \bottomrule
 \end{tabularx}
@@ -227,7 +281,6 @@
 
 \begin{center}
 \begin{tikzpicture}[
-  node distance=2.6cm,
   state/.style={rectangle, rounded corners=5pt, draw=primary, thick,
     fill=primary!8, minimum width=2.6cm, minimum height=0.9cm,
     font=\small\bfseries, text=primary},
@@ -238,11 +291,11 @@
   errarrow/.style={-{Stealth[length=3mm]}, thick, danger!70, dashed},
 ]
   \node[state]                     (pending)   {PENDING};
-  \node[state, right of=pending]   (transit)   {IN\_TRANSIT};
-  \node[state, right of=transit]   (delivered) {DELIVERED};
-  \node[error, below of=pending]   (cancelled) {CANCELLED};
-  \node[error, below of=transit]   (failed)    {FAILED};
-  \node[error, below of=delivered] (returned)  {RETURNED};
+  \node[state, right=1.2cm of pending]   (transit)   {IN\_TRANSIT};
+  \node[state, right=1.2cm of transit]   (delivered) {DELIVERED};
+  \node[error, below=1.2cm of pending]   (cancelled) {CANCELLED};
+  \node[error, below=1.2cm of transit]   (failed)    {FAILED};
+  \node[error, below=1.2cm of delivered] (returned)  {RETURNED};
   \draw[arrow]    (pending)   -- (transit);
   \draw[arrow]    (transit)   -- (delivered);
   \draw[errarrow] (pending)   -- (cancelled);
@@ -280,7 +333,7 @@
 \routeheader{post}{POST}{/api/v1/shipments}
 
 \textbf{Descripción:} Crea una nueva orden de despacho. Llamado por
-\textbf{G5 (Pedidos)} cuando un pedido ha sido confirmado y pagado.
+\textbf{G5 (Pedidos o Order Management)} cuando un pedido ha sido confirmado y pagado.
 
 \vspace{0.3cm}
 \textbf{Request Body} (\texttt{application/json}):
@@ -350,7 +403,7 @@
 \routeheader{get}{GET}{/api/v1/shipments/\{shipment\_id\}}
 
 \textbf{Descripción:} Retorna estado actual y datos completos de un despacho.
-Llamado por \textbf{G1 (Frontend)} y \textbf{G5 (Pedidos)}.
+Llamado por \textbf{G1 (Frontend)} y \textbf{G5 (Pedidos o Order Management)}.
 
 \vspace{0.3cm}
 \textbf{Response --- 200 OK:}
@@ -450,7 +503,7 @@ Llamado por \textbf{G1 (Frontend)} y \textbf{G5 (Pedidos)}.
 
 \begin{infobox}
   Al cambiar el estado exitosamente, el servicio emite automáticamente
-  el evento correspondiente hacia G9 (ver Parte~II).
+  el evento correspondiente hacia G8 (ver Parte~II).
 \end{infobox}
 
 \textbf{Errores:}
@@ -474,7 +527,7 @@ Llamado por \textbf{G1 (Frontend)} y \textbf{G5 (Pedidos)}.
 
 \routeheader{get}{GET}{/api/v1/shipments}
 
-\textbf{Descripción:} Lista de despachos con filtros. Para \textbf{G10 (Reportería)}.
+\textbf{Descripción:} Lista de despachos con filtros. Para \textbf{G7 (Reportería, Batch y Streaming)}.
 
 \vspace{0.3cm}
 \textbf{Query Parameters (opcionales):}
@@ -534,20 +587,15 @@ Llamado por \textbf{G1 (Frontend)} y \textbf{G5 (Pedidos)}.
 \section{Estructura Estándar de Errores}
 \label{sec:errores}
 
-Todos los errores siguen el mismo formato:
+Todos los errores siguen el mismo formato base. Opcionalmente, se puede incluir un campo \texttt{"details"} para proveer más contexto de validación:
 
 \begin{lstlisting}
 {
-  "error": {
-    "code": 422,
-    "type": "VALIDATION_ERROR",
-    "message": "El campo weight_kg debe ser mayor a 0.",
-    "details": {
-      "field": "weight_kg",
-      "value": -1.5,
-      "constraint": "must be greater than 0"
-    }
-  }
+  "timestamp": "2026-06-11T14:05:00Z",
+  "status": 422,
+  "code": "VALIDATION_ERROR",
+  "message": "El campo weight_kg debe ser mayor a 0.",
+  "correlationId": "req-123e4567"
 }
 \end{lstlisting}
 
@@ -556,7 +604,7 @@ Todos los errores siguen el mismo formato:
 \renewcommand{\arraystretch}{1.3}
 \begin{tabularx}{\textwidth}{l l X}
   \toprule
-  \textbf{Código} & \textbf{type} & \textbf{Uso} \\
+  \textbf{status} & \textbf{code} & \textbf{Uso} \\
   \midrule
   400 & \texttt{BAD\_REQUEST}      & JSON malformado, campos faltantes. \\
   404 & \texttt{NOT\_FOUND}        & Recurso no encontrado. \\
@@ -574,42 +622,36 @@ Todos los errores siguen el mismo formato:
 \part{Contrato de Eventos JSON}
 % ══════════════════════════════════════════════════════════════════════════════
 
-\section{Mecanismo de Comunicación}
+\section{Mecanismo de Comunicación (Pub/Sub)}
 
-\begin{warningbox}[title={\faExclamationCircle\quad Decisión pendiente con G9}]
-  Se propone usar \textbf{Webhooks HTTP}: nuestro servicio hace un
-  \texttt{POST} a una URL de G9 cada vez que cambia un estado.
+La arquitectura de eventos se basa en un modelo \textbf{Pub/Sub} (Publish/Subscribe) utilizando un \textbf{Event Broker} (ej. Upstash Kafka o Supabase Realtime). 
+Esto permite desacoplar los servicios y procesar los eventos de forma 100\% asíncrona.
 
-  \vspace{0.3em}
-  \textbf{Alternativa:} G9 hace polling a nuestro \texttt{GET}.
-
-  \vspace{0.3em}
-  \textbf{Acordar en la reunión de contratos antes del 16 de Junio.}
-\end{warningbox}
-
-\subsection{Flujo de Webhooks (propuesto)}
+\subsection{Flujo de Eventos}
 
 \begin{enumerate}[noitemsep]
-  \item G9 nos registra su URL de webhook.
-  \item Cada cambio de estado dispara un \texttt{POST} a esa URL.
-  \item G9 responde \texttt{200 OK} para confirmar recepción.
-  \item Si falla, reintentamos 3 veces con backoff (1s, 2s, 4s).
+  \item Un despacho cambia de estado en nuestro servicio (G6).
+  \item G6 publica un evento JSON (Publish) en el tópico global \texttt{shipment-events} del Broker.
+  \item Los servicios consumidores (G8, G7) que están suscritos (Subscribe) a este tópico reciben el mensaje asíncronamente.
+  \item El Broker se encarga de asegurar la entrega, eliminando el acoplamiento directo entre G6 y los consumidores.
 \end{enumerate}
 
 
 \section{Formato Estándar del Evento}
 \label{sec:formato-evento}
 
-Todos los eventos emitidos por G6 siguen esta estructura:
+Todos los eventos emitidos por G6 siguen esta estructura. Cada vez que un despacho cambie de estado, el servicio del Grupo 6 generará y publicará el siguiente payload JSON en el tópico global \texttt{shipment-events}. Los servicios consumidores (Grupo 8 y Grupo 7) deberán estar suscritos a dicho tópico para procesar la información de forma asíncrona:
 
 \contractheader{Envelope del Evento (estructura común)}
 
 \begin{lstlisting}
 {
-  "event_id": "evt-550e8400-e29b-41d4-a716-446655440000",
-  "event_type": "ShipmentDelivered",
-  "source": "g6-despacho",
-  "timestamp": "2026-06-11T15:00:00Z",
+  "eventId": "evt-550e8400-e29b-41d4-a716-446655440000",
+  "eventType": "ShipmentDelivered",
+  "version": "1.0",
+  "occurredAt": "2026-06-11T15:00:00Z",
+  "producer": "g6-despacho",
+  "correlationId": "req-123e4567",
   "payload": { ... }
 }
 \end{lstlisting}
@@ -621,11 +663,13 @@ Todos los eventos emitidos por G6 siguen esta estructura:
   \toprule
   \textbf{Campo} & \textbf{Tipo} & \textbf{Descripción} \\
   \midrule
-  \texttt{event\_id}   & string (UUID) & Identificador único del evento. \\
-  \texttt{event\_type} & string        & Tipo del evento (ver catálogo). \\
-  \texttt{source}      & string        & Siempre \texttt{"g6-despacho"}. \\
-  \texttt{timestamp}   & datetime      & Momento del evento (ISO 8601). \\
-  \texttt{payload}     & object        & Datos específicos. \\
+  \texttt{eventId}       & string (UUID) & Identificador único del evento. \\
+  \texttt{eventType}     & string        & Tipo del evento (ver catálogo). \\
+  \texttt{version}       & string        & Versión del esquema del evento. \\
+  \texttt{occurredAt}    & datetime      & Momento del evento (ISO 8601). \\
+  \texttt{producer}      & string        & Siempre \texttt{"g6-despacho"}. \\
+  \texttt{correlationId} & string        & ID de correlación para trazar flujo. \\
+  \texttt{payload}       & object        & Datos específicos del evento. \\
   \bottomrule
 \end{tabularx}
 \caption{Campos del envelope de evento.}
@@ -643,10 +687,12 @@ Se emite cuando G5 crea exitosamente un nuevo despacho.
 
 \begin{lstlisting}
 {
-  "event_id": "evt-550e8400-e29b-41d4-a716-446655440001",
-  "event_type": "ShipmentCreated",
-  "source": "g6-despacho",
-  "timestamp": "2026-06-11T14:00:00Z",
+  "eventId": "evt-550e8400-e29b-41d4-a716-446655440001",
+  "eventType": "ShipmentCreated",
+  "version": "1.0",
+  "occurredAt": "2026-06-11T14:00:00Z",
+  "producer": "g6-despacho",
+  "correlationId": "req-123e4567",
   "payload": {
     "shipment_id": "SHP-a1b2c3d4",
     "order_id": "ORD-20260611-001",
@@ -660,7 +706,7 @@ Se emite cuando G5 crea exitosamente un nuevo despacho.
 }
 \end{lstlisting}
 
-\textbf{Consumidores:} G9 (notifica al cliente), G10 (registro).
+\textbf{Consumidores:} G8 (notifica al cliente), G7 (registro).
 
 \vspace{0.4cm}
 
@@ -673,10 +719,12 @@ Se emite cuando el paquete sale a reparto.
 
 \begin{lstlisting}
 {
-  "event_id": "evt-550e8400-e29b-41d4-a716-446655440002",
-  "event_type": "ShipmentInTransit",
-  "source": "g6-despacho",
-  "timestamp": "2026-06-11T14:30:00Z",
+  "eventId": "evt-550e8400-e29b-41d4-a716-446655440002",
+  "eventType": "ShipmentInTransit",
+  "version": "1.0",
+  "occurredAt": "2026-06-11T14:30:00Z",
+  "producer": "g6-despacho",
+  "correlationId": "req-123e4567",
   "payload": {
     "shipment_id": "SHP-a1b2c3d4",
     "order_id": "ORD-20260611-001",
@@ -688,7 +736,7 @@ Se emite cuando el paquete sale a reparto.
 }
 \end{lstlisting}
 
-\textbf{Consumidores:} G9 (``Tu paquete va en camino'').
+\textbf{Consumidores:} G8 (``Tu paquete va en camino'').
 
 \vspace{0.4cm}
 
@@ -701,10 +749,12 @@ Se emite cuando el paquete es entregado exitosamente.
 
 \begin{lstlisting}
 {
-  "event_id": "evt-550e8400-e29b-41d4-a716-446655440003",
-  "event_type": "ShipmentDelivered",
-  "source": "g6-despacho",
-  "timestamp": "2026-06-11T15:00:00Z",
+  "eventId": "evt-550e8400-e29b-41d4-a716-446655440003",
+  "eventType": "ShipmentDelivered",
+  "version": "1.0",
+  "occurredAt": "2026-06-11T15:00:00Z",
+  "producer": "g6-despacho",
+  "correlationId": "req-123e4567",
   "payload": {
     "shipment_id": "SHP-a1b2c3d4",
     "order_id": "ORD-20260611-001",
@@ -717,7 +767,7 @@ Se emite cuando el paquete es entregado exitosamente.
 }
 \end{lstlisting}
 
-\textbf{Consumidores:} G9 (``Tu paquete ha llegado''), G10 (métricas).
+\textbf{Consumidores:} G8 (``Tu paquete ha llegado''), G7 (métricas).
 
 \vspace{0.4cm}
 
@@ -730,10 +780,12 @@ Se emite cuando un despacho es cancelado antes de salir a reparto.
 
 \begin{lstlisting}
 {
-  "event_id": "evt-550e8400-e29b-41d4-a716-446655440004",
-  "event_type": "ShipmentCancelled",
-  "source": "g6-despacho",
-  "timestamp": "2026-06-11T14:10:00Z",
+  "eventId": "evt-550e8400-e29b-41d4-a716-446655440004",
+  "eventType": "ShipmentCancelled",
+  "version": "1.0",
+  "occurredAt": "2026-06-11T14:10:00Z",
+  "producer": "g6-despacho",
+  "correlationId": "req-123e4567",
   "payload": {
     "shipment_id": "SHP-a1b2c3d4",
     "order_id": "ORD-20260611-001",
@@ -745,7 +797,7 @@ Se emite cuando un despacho es cancelado antes de salir a reparto.
 }
 \end{lstlisting}
 
-\textbf{Consumidores:} G9 (notifica cancelación), G5 (confirma).
+\textbf{Consumidores:} G8 (notifica cancelación), G5 (confirma).
 
 \vspace{0.4cm}
 
@@ -758,10 +810,12 @@ Se emite cuando un intento de entrega falla.
 
 \begin{lstlisting}
 {
-  "event_id": "evt-550e8400-e29b-41d4-a716-446655440005",
-  "event_type": "ShipmentFailed",
-  "source": "g6-despacho",
-  "timestamp": "2026-06-11T16:00:00Z",
+  "eventId": "evt-550e8400-e29b-41d4-a716-446655440005",
+  "eventType": "ShipmentFailed",
+  "version": "1.0",
+  "occurredAt": "2026-06-11T16:00:00Z",
+  "producer": "g6-despacho",
+  "correlationId": "req-123e4567",
   "payload": {
     "shipment_id": "SHP-a1b2c3d4",
     "order_id": "ORD-20260611-001",
@@ -773,7 +827,7 @@ Se emite cuando un intento de entrega falla.
 }
 \end{lstlisting}
 
-\textbf{Consumidores:} G9 (``Hubo un problema con tu entrega''), G5.
+\textbf{Consumidores:} G8 (``Hubo un problema con tu entrega''), G5.
 
 \vspace{0.4cm}
 
@@ -786,10 +840,12 @@ Se emite cuando un paquete entregado es devuelto.
 
 \begin{lstlisting}
 {
-  "event_id": "evt-550e8400-e29b-41d4-a716-446655440006",
-  "event_type": "ShipmentReturned",
-  "source": "g6-despacho",
-  "timestamp": "2026-06-12T10:00:00Z",
+  "eventId": "evt-550e8400-e29b-41d4-a716-446655440006",
+  "eventType": "ShipmentReturned",
+  "version": "1.0",
+  "occurredAt": "2026-06-12T10:00:00Z",
+  "producer": "g6-despacho",
+  "correlationId": "req-123e4567",
   "payload": {
     "shipment_id": "SHP-a1b2c3d4",
     "order_id": "ORD-20260611-001",
@@ -801,7 +857,7 @@ Se emite cuando un paquete entregado es devuelto.
 }
 \end{lstlisting}
 
-\textbf{Consumidores:} G9, G5 (gestionar reembolso), G10 (métricas).
+\textbf{Consumidores:} G8, G5 (gestionar reembolso), G7 (métricas).
 
 
 % ══════════════════════════════════════════════════════════════════════════════
@@ -809,7 +865,7 @@ Se emite cuando un paquete entregado es devuelto.
 \part{Contratos Inter-Grupo}
 % ══════════════════════════════════════════════════════════════════════════════
 
-\section{Contrato con G5 (Pedidos) --- Entrada}
+\section{Contrato con G5 (Pedidos o Order Management) --- Entrada}
 \label{sec:contrato-g5}
 
 Este contrato define \textbf{qué datos nos envía G5} cuando un pedido es
@@ -818,10 +874,11 @@ confirmado y necesita ser despachado.
 \subsection{Flujo de Integración}
 
 \begin{enumerate}[noitemsep]
-  \item El cliente completa el pago en G5.
+  \item El cliente completa el checkout y el pago es procesado por G8.
+  \item G5 (Pedidos o Order Management) consolida el pedido y nos notifica para despacho.
   \item G5 hace una solicitud HTTP POST a nuestro \texttt{/api/v1/shipments}.
   \item Respondemos con el \texttt{shipment\_id} y estado \texttt{PENDING}.
-  \item G5 almacena el \texttt{shipment\_id} para consultas futuras.
+  \item G5 almacena el \texttt{shipment\_id} para tracking y consultas futuras.
 \end{enumerate}
 
 \subsection{JSON que G5 nos envía}
@@ -869,30 +926,32 @@ confirmado y necesita ser despachado.
 \end{warningbox}
 
 
-\section{Contrato con G9 (Notificaciones) --- Salida}
-\label{sec:contrato-g9}
+\section{Contrato con G8 (Pago Simulado y Notificaciones) --- Salida}
+\label{sec:contrato-g8}
 
-Define \textbf{qué datos le enviamos a G9} en cada cambio de estado.
+Define \textbf{qué datos le enviamos a G8} en cada cambio de estado.
 
 \subsection{Flujo de Integración}
 
 \begin{enumerate}[noitemsep]
   \item Un shipment cambia de estado (vía PATCH o simulación).
   \item Construimos el evento JSON correspondiente.
-  \item Hacemos \texttt{POST} al webhook de G9.
-  \item G9 procesa y notifica al usuario final.
+  \item Publicamos el evento en el tópico \texttt{shipment-events} del Event Broker.
+  \item G8 consume el evento desde el tópico y notifica al usuario final.
 \end{enumerate}
 
-\subsection{JSON que G6 le envía a G9}
+\subsection{JSON que G6 publica en el Event Broker (para G8)}
 
-\contractheader{Evento de G6 hacia G9 (ejemplo: entrega)}
+\contractheader{Evento publicado por G6 (ejemplo: entrega)}
 
 \begin{lstlisting}
 {
-  "event_id": "evt-550e8400-e29b-41d4-a716-446655440003",
-  "event_type": "ShipmentDelivered",
-  "source": "g6-despacho",
-  "timestamp": "2026-06-11T15:00:00Z",
+  "eventId": "evt-550e8400-e29b-41d4-a716-446655440003",
+  "eventType": "ShipmentDelivered",
+  "version": "1.0",
+  "occurredAt": "2026-06-11T15:00:00Z",
+  "producer": "g6-despacho",
+  "correlationId": "req-123e4567",
   "payload": {
     "shipment_id": "SHP-a1b2c3d4",
     "order_id": "ORD-20260611-001",
@@ -905,42 +964,54 @@ Define \textbf{qué datos le enviamos a G9} en cada cambio de estado.
 }
 \end{lstlisting}
 
-\subsection{Respuesta esperada de G9}
+\subsection{Comportamiento esperado de G8 (Pago Simulado y Notificaciones)}
 
-\contractheader{Acknowledgment de G9}
+\begin{itemize}[noitemsep]
+  \item \textbf{Procesamiento:} El servicio del Grupo 8 consumirá el evento
+    desde el tópico \texttt{shipment-events} de forma asíncrona. G6 no recibe
+    ninguna respuesta directa ni código HTTP de parte de G8.
+  \item \textbf{Acuse de recibo (ACK):} Una vez procesada la información
+    localmente por su lógica interna, el componente consumidor de G8 emitirá un
+    \textbf{ACK} (\textit{Acknowledgment}) automático hacia el Event Broker para
+    confirmar la recepción exitosa y permitir la liberación del mensaje en la
+    cola. Este ACK es una señal de bajo nivel gestionada por la librería del
+    Broker, no un payload JSON personalizado.
+  \item \textbf{Acción final:} El Grupo 8 será responsable de gatillar la
+    alerta o correo correspondiente al usuario final utilizando los datos del
+    payload transmitido (\texttt{order\_id}, \texttt{status},
+    \texttt{customer\_name}).
+\end{itemize}
 
-\begin{lstlisting}
-{
-  "received": true,
-  "event_id": "evt-550e8400-e29b-41d4-a716-446655440003"
-}
-\end{lstlisting}
+\begin{infobox}
+  En una arquitectura Pub/Sub real, el productor (G6) nunca ve el ACK del
+  consumidor (G8). El ACK viaja exclusivamente entre el consumidor y el
+  Broker, y su único efecto es marcar el mensaje como procesado en la cola.
+  Esto garantiza el desacoplamiento total entre ambos servicios.
+\end{infobox}
 
-\subsection{Preguntas pendientes para G9}
+\subsection{Preguntas pendientes para G8}
 
-\begin{warningbox}[title={\faExclamationCircle\quad Confirmar con G9}]
+\begin{warningbox}[title={\faExclamationCircle\quad Confirmar con G8}]
 \begin{enumerate}[noitemsep]
-  \item ¿URL de webhook?
   \item ¿Campos adicionales necesarios? (email, teléfono)
-  \item ¿Prefieren webhooks o polling?
-  \item ¿Cómo confirman recepción? Proponemos \texttt{200 OK}.
   \item ¿Qué eventos les interesan? ¿Los 6 o solo algunos?
+  \item Coordinar acceso y credenciales al Event Broker.
 \end{enumerate}
 \end{warningbox}
 
 
-\section{Contrato con G10 (Reportería) --- Salida}
+\section{Contrato con G7 (Reportería, Batch y Streaming) --- Salida}
 
-G10 consume datos para dashboards de rendimiento.
+G7 consume datos para dashboards de rendimiento.
 
 \subsection{Opciones de Integración}
 
 \begin{enumerate}[noitemsep]
   \item \textbf{Vía API REST:} \texttt{GET /shipments} con filtros.
-  \item \textbf{Vía Eventos:} Suscripción a webhooks (mismos que G9).
+  \item \textbf{Vía Eventos:} Suscripción al tópico \texttt{shipment-events} en el Broker.
 \end{enumerate}
 
-\subsection{Datos relevantes para G10}
+\subsection{Datos relevantes para G7}
 
 \begin{table}[h!]
 \centering
@@ -999,45 +1070,73 @@ G1 consume nuestro endpoint de tracking.
   G5  & G6  & Síncrono  & REST GET     & Consulta por \texttt{order\_id}. \\
   G5  & G6  & Síncrono  & REST PATCH   & Cancelación. \\
   G1  & G6  & Síncrono  & REST GET     & Tracking por \texttt{shipment\_id}. \\
-  G6  & G9  & Asíncrono & Webhook POST & Eventos de estado. \\
-  G6  & G10 & Asíncrono & Webhook POST & Eventos de estado. \\
-  G10 & G6  & Síncrono  & REST GET     & Lista para reportes. \\
+  G6     & Broker (Kafka/Supabase) & Asíncrono & Publish (Pub)   & Mensaje en tópico \texttt{shipment-events} \\
+  Broker & G8 (Pago Simulado y Notificaciones)     & Asíncrono & Subscribe (Sub) & Consume desde tópico \texttt{shipment-events} \\
+  Broker & G7 (Reportería, Batch y Streaming)        & Asíncrono & Subscribe (Sub) & Consume desde tópico \texttt{shipment-events} \\
+  G7 & G6  & Síncrono  & REST GET     & Lista para reportes. \\
   \bottomrule
 \end{tabularx}
 \caption{Matriz completa de dependencias del Grupo 6.}
 \end{table}
 
 
-\section{Diagrama de Arquitectura}
+\section{Diagrama de Arquitectura (C4 --- Nivel 2: Contenedores)}
 
 \begin{center}
+{\small\textbf{System Container Diagram --- Ecosistema Logístico (perspectiva G6 Despachos)}}
+\vspace{0.5cm}
+
 \begin{tikzpicture}[
-  node distance=2.5cm and 3.5cm,
   box/.style={rectangle, rounded corners=8pt, draw=primary, thick, fill=primary!6,
-    minimum width=3cm, minimum height=1.4cm, align=center,
+    minimum width=3.4cm, minimum height=1.8cm, align=center,
     font=\small\bfseries, text=primary},
   extbox/.style={rectangle, rounded corners=8pt, draw=info, thick, fill=info!6,
-    minimum width=3cm, minimum height=1.4cm, align=center,
+    minimum width=3.4cm, minimum height=1.8cm, align=center,
     font=\small\bfseries, text=info},
   db/.style={cylinder, draw=accent, thick, fill=accent!8, shape border rotate=90,
-    minimum width=2.2cm, minimum height=1.2cm, aspect=0.3,
+    minimum width=2.4cm, minimum height=1.4cm, aspect=0.3,
     font=\small\bfseries, text=accent},
+  brokerbox/.style={rectangle, rounded corners=8pt, draw=warning, thick, fill=warning!5,
+    minimum width=3.4cm, minimum height=1.8cm, align=center,
+    font=\small\bfseries, text=warning!80!black},
   arr/.style={-{Stealth[length=3mm]}, thick},
+  tech/.style={font=\tiny\itshape, text=gray},
 ]
-  \node[extbox]                    (g1)  {G1\\\relax Frontend};
-  \node[extbox, below=1.5cm of g1] (g5)  {G5\\\relax Pedidos};
-  \node[box, right=3cm of g5]      (g6)  {G6\\\relax Despachos};
-  \node[db, below=1.5cm of g6]     (db)  {Supabase};
-  \node[extbox, right=3cm of g6]   (g9)  {G9\\\relax Notificaciones};
-  \node[extbox, below=1.5cm of g9] (g10) {G10\\\relax Reportería};
+  % ── Sistemas externos (izquierda) ──
+  \node[extbox]                    (g5)  {G5 --- Pedidos\\\relax{\tiny[Python / FastAPI]}};
+  \node[extbox, above=1.8cm of g5] (g1)  {G1 --- Frontend\\\relax{\tiny[React / Next.js]}};
 
+  % ── Contenedor principal (centro) ──
+  \node[box, right=2.8cm of g5]    (g6)  {G6 --- Despachos\\\relax{\tiny[Python / FastAPI]}};
+  \node[db, below=1.8cm of g6]     (db)  {Supabase};
+  \node[tech, below=0.1cm of db]   {[PostgreSQL]};
+
+  % ── Event Broker + consumidores (derecha) ──
+  \node[brokerbox, right=2.8cm of g6] (broker) {Event Broker\\\relax{\tiny[Kafka / Supabase Realtime]}};
+  \node[extbox, above=1.8cm of broker] (g8)  {G8 --- Pago Simulado\\y Notificaciones\\\relax{\tiny[Node.js]}};
+  \node[extbox, below=1.8cm of broker] (g7)  {G7 --- Reportería,\\Batch y Streaming\\\relax{\tiny[Python / Spark]}};
+
+  % ── Flechas REST (síncronas) ──
   \draw[arr, info] (g5)  -- node[above, font=\scriptsize] {\texttt{POST/GET/PATCH}} (g6);
   \draw[arr, info] (g1)  -| node[above left, font=\scriptsize] {\texttt{GET}} (g6);
   \draw[arr, primary] (g6) -- node[left, font=\scriptsize] {SQL} (db);
-  \draw[arr, success] (g6) -- node[above, font=\scriptsize] {Webhook} (g9);
-  \draw[arr, success] (g6) |- node[below right, font=\scriptsize] {Webhook} (g10);
-  \draw[arr, info, dashed] (g10) -- node[right, font=\scriptsize] {\texttt{GET}} (g6);
+
+  % ── Flechas Eventos (asíncronas) ──
+  \draw[arr, success] (g6) -- node[above, font=\scriptsize] {Publish Event} (broker);
+  \draw[arr, success] (broker) -- node[right, font=\scriptsize] {Subscribe} (g8);
+  \draw[arr, success] (broker) -- node[right, font=\scriptsize] {Subscribe} (g7);
+  \draw[arr, info, dashed] (g7.south) -- ++(0,-1.0) -| node[below, near start, font=\scriptsize] {\texttt{GET}} (g6.south);
+
 \end{tikzpicture}
+\end{center}
+
+\vspace{0.5cm}
+\begin{center}
+{\footnotesize
+  \textcolor{info}{\rule{0.6cm}{2pt}} Comunicación síncrona (REST/HTTP) \qquad
+  \textcolor{success}{\rule{0.6cm}{2pt}} Comunicación asíncrona (Pub/Sub) \qquad
+  \textcolor{info}{- - -} Consulta periódica
+}
 \end{center}
 
 
@@ -1068,6 +1167,51 @@ CREATE TABLE shipments (
 \end{infobox}
 
 
+\section{Supuestos, Riesgos y Mitigaciones}
+
+\subsection{Supuestos}
+
+\begin{enumerate}[noitemsep]
+  \item \textbf{Formato de entrada estandarizado:} G5 (Pedidos) envía los datos del pedido con todos los campos obligatorios definidos en el contrato REST (\texttt{order\_id}, \texttt{customer\_name}, \texttt{address}, \texttt{city}, \texttt{weight\_kg}).
+  \item \textbf{Idempotencia del \texttt{order\_id}:} Cada pedido genera exactamente un envío. Si G5 reintenta el \texttt{POST}, el sistema rechaza el duplicado con \texttt{409 Conflict}.
+  \item \textbf{Disponibilidad del Event Broker:} El Event Broker (Kafka o Supabase Realtime) está operativo y accesible. La publicación de eventos es \emph{at-least-once}.
+  \item \textbf{Base de datos centralizada:} G6 es el único grupo que escribe en la tabla \texttt{shipments}. Otros grupos solo consultan vía REST.
+  \item \textbf{Conectividad cloud:} Todos los servicios se despliegan en la nube y se comunican a través de HTTPS o protocolo de mensajería seguro.
+  \item \textbf{Autenticación delegada:} La autenticación del usuario final la gestiona G1/G8. G6 confía en los headers \texttt{X-Consumer} y \texttt{X-Correlation-Id} para trazabilidad.
+\end{enumerate}
+
+\subsection{Riesgos y Mitigaciones}
+
+\begin{table}[!ht]
+\centering
+\renewcommand{\arraystretch}{1.4}
+\begin{tabularx}{\textwidth}{l X X l}
+  \toprule
+  \textbf{ID} & \textbf{Riesgo} & \textbf{Mitigación} & \textbf{Impacto} \\
+  \midrule
+  R1 & Caída del Event Broker impide que G8 notifique al usuario final. & Cola de reintentos con backoff exponencial; tabla \texttt{outbox} local para eventos pendientes. & Alto \\
+  R2 & G5 envía datos incompletos o con formato inválido. & Validación estricta en el endpoint \texttt{POST /shipments} con retorno \texttt{422} y mensaje descriptivo. & Medio \\
+  R3 & Duplicación de envíos por reintentos de G5 sin \texttt{Idempotency-Key}. & Constraint \texttt{UNIQUE} en \texttt{order\_id} a nivel de base de datos y verificación del header. & Medio \\
+  R4 & Latencia alta en la base de datos Supabase por volumen de consultas de G7. & Índices en \texttt{status} y \texttt{created\_at}; endpoint paginado con \texttt{limit/offset}. & Medio \\
+  R5 & Transición de estado inválida (e.g., de \texttt{DELIVERED} a \texttt{PENDING}). & Máquina de estados con validación explícita de transiciones permitidas antes de aplicar el PATCH. & Bajo \\
+  R6 & Pérdida de trazabilidad entre servicios ante fallos parciales. & Propagación obligatoria de \texttt{X-Correlation-Id} en todos los requests y eventos publicados. & Medio \\
+  \bottomrule
+\end{tabularx}
+\caption{Riesgos identificados para el servicio de Despachos (G6).}
+\end{table}
+
+\subsection{Manejo de Errores}
+
+Todos los errores retornados por la API siguen la estructura estándar definida en la Sección~\ref{sec:general-info} (Información General). Además:
+
+\begin{itemize}[noitemsep]
+  \item Los errores de validación (\texttt{422}) incluyen el campo específico que falló en el \texttt{message}.
+  \item Los conflictos de idempotencia (\texttt{409}) retornan el \texttt{shipment\_id} existente para que el consumidor pueda recuperarse.
+  \item Los errores de transición de estado inválida (\texttt{422}) indican el estado actual y los estados de destino válidos.
+  \item Todos los errores incluyen el \texttt{correlationId} para facilitar la depuración entre grupos.
+\end{itemize}
+
+
 \section{Historial de Versiones}
 
 \begin{table}[h!]
@@ -1076,7 +1220,7 @@ CREATE TABLE shipments (
   \toprule
   \textbf{Ver.} & \textbf{Fecha} & \textbf{Autor} & \textbf{Cambios} \\
   \midrule
-  1.0 & 11 Jun 2026 & Grupo 6 & Versión inicial. \\
+  1.0 & 16 Jun 2026 & Grupo 6 & Versión inicial. \\
   \bottomrule
 \end{tabularx}
 \end{table}

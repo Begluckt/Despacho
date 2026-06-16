@@ -171,8 +171,8 @@ Nuestro servicio es el equivalente interno a una empresa de courier (Starken, Ch
 \section{Grupos con los que Interactuamos}
 % ══════════════════════════════════════════════════════════════════════════════
 
-\begin{alertbox}[title={\faExclamationTriangle\quad Corrección: Falta G1 en el briefing original}]
-  El briefing original solo mencionaba G5, G9 y G10 como aliados, pero en la
+\begin{alertbox}[title={\faExclamationTriangle\quad Corrección: Nuevos grupos y Falta G1}]
+  Se nos ha informado de la nueva distribución de grupos aliados (G5, G7 y G8). Además, en la
   descripción de endpoints se indica que \textbf{el Frontend (G1)} también
   consumirá nuestro \texttt{GET} para mostrar el tracking al usuario.
   Debemos incluirlos.
@@ -185,21 +185,21 @@ Nuestro servicio es el equivalente interno a una empresa de courier (Starken, Ch
   \toprule
   \textbf{Grupo} & \textbf{Nombre} & \textbf{Relación con nosotros} & \textbf{Dirección} \\
   \midrule
-  G1  & Frontend       & Consume \texttt{GET /shipments/\{id\}} para mostrar tracking al usuario final. & Ellos $\rightarrow$ Nosotros \\
-  G5  & Pedidos        & Llama a \texttt{POST /shipments} cuando un pedido se confirma y paga. Es nuestro \textbf{principal cliente}. & Ellos $\rightarrow$ Nosotros \\
-  G9  & Notificaciones & Escucha nuestros eventos (\texttt{ShipmentCreated}, \texttt{ShipmentInTransit}, \texttt{ShipmentDelivered}, etc.) para enviar correos/notificaciones al usuario. & Nosotros $\rightarrow$ Ellos \\
-  G10 & Reportería     & Consume nuestros datos (vía eventos o API) para dashboards de rendimiento: entregas a tiempo, tasa de fallos, etc. & Nosotros $\rightarrow$ Ellos \\
+  G1 & Frontend & Consume \texttt{GET /shipments/\{id\}} para mostrar tracking al usuario final. & Ellos $\rightarrow$ Nosotros \\
+  G5 & Pedidos Order Management & Llama a \texttt{POST /shipments} cuando un pedido se confirma y paga. Es nuestro \textbf{principal cliente}. & Ellos $\rightarrow$ Nosotros \\
+  G7 & Reportería Batch y Streaming & Consume nuestros datos (vía eventos o API) para dashboards de rendimiento: entregas a tiempo, tasa de fallos, etc. & Nosotros $\rightarrow$ Ellos \\
+  G8 & Pago Simulado y Notificados & Escucha nuestros eventos (\texttt{ShipmentCreated}, \texttt{ShipmentInTransit}, \dots) para enviar notificaciones al usuario. \textbf{Asumimos que G8 se encarga del cobro de despacho} durante el pago. & Nosotros $\rightarrow$ Ellos \\
   \bottomrule
 \end{tabularx}
 \caption{Matriz de interacciones del Grupo 6.}
 \end{table}
 
 \begin{tipbox}
-  \textbf{Acción inmediata:} Contactar a los coordinadores de G5 y G9 para
-  acordar los contratos JSON. Propuesta de mensaje:\\[0.3em]
+  \textbf{Acción inmediata:} Contactar a los coordinadores de G5 y G8 para
+  acordar los contratos JSON y aclarar la responsabilidad del cobro de despacho. Propuesta de mensaje:\\[0.3em]
   \textit{``Hola, somos del Grupo 6 (Despachos). Necesitamos definir juntos:
-  (1) qué datos nos envían al crear un pedido, y (2) qué datos necesitan
-  recibir en las notificaciones de cambio de estado.''}
+  (1) qué datos nos envían al crear un pedido, (2) qué datos necesitan
+  recibir en las notificaciones, y (3) confirmar que ustedes (G8) asumen el cobro de despacho.''}
 \end{tipbox}
 
 
@@ -291,7 +291,7 @@ https://<nombre-del-servicio>.onrender.com/api/v1
 % ── POST ──────────────────────────────────────────────────────────────────────
 \subsection{POST /shipments --- Crear un despacho}
 
-\textbf{Quién lo llama:} Grupo 5 (Pedidos).
+\textbf{Quién lo llama:} Grupo 5 (Pedidos Order Management).
 
 \subsubsection*{Request Body}
 \begin{lstlisting}[language=json]
@@ -332,7 +332,7 @@ https://<nombre-del-servicio>.onrender.com/api/v1
 % ── GET ───────────────────────────────────────────────────────────────────────
 \subsection{GET /shipments/\{shipment\_id\} --- Consultar estado}
 
-\textbf{Quién lo llama:} Grupo 1 (Frontend) y Grupo 5 (Pedidos).
+\textbf{Quién lo llama:} Grupo 1 (Frontend) y Grupo 5 (Pedidos Order Management).
 
 \subsubsection*{Response --- 200 OK}
 \begin{lstlisting}[language=json]
@@ -404,22 +404,19 @@ https://<nombre-del-servicio>.onrender.com/api/v1
 \end{infobox}
 
 
-% ── G6 / G9 / G10 Eventos ─────────────────────────────────────────────────────
+% ── G6 / G8 / G7 Eventos ──────────────────────────────────────────────────────
 \section{Contrato de Eventos}
 \label{sec:eventos}
 % ══════════════════════════════════════════════════════════════════════════════
 
-\begin{alertbox}[title={\faExclamationTriangle\quad Corrección: Mecanismo de eventos no especificado}]
-  El briefing original habla de ``publicar eventos'' y ``emitir mensajes''
-  sin aclarar la tecnología. Para un proyecto desplegado en Render (tier
-  gratuito), las opciones realistas son:
+\begin{alertbox}[title={\faExclamationTriangle\quad Corrección: Mecanismo de eventos}]
+  El briefing original hablaba de ``publicar eventos'' y ``emitir mensajes''
+  sin aclarar la tecnología. Se ha acordado la siguiente arquitectura:
   \begin{itemize}[noitemsep]
-    \item \textbf{Webhooks HTTP (recomendado):} Nuestro servicio hace un
-          \texttt{POST} a una URL registrada del G9 cada vez que cambia un estado.
-    \item \textbf{Polling:} G9/G10 consultan periódicamente nuestro \texttt{GET}.
-          Menos eficiente pero más simple.
+    \item \textbf{Event Broker (Pub/Sub):} Nuestro servicio publicará los cambios de estado
+          en el tópico global \texttt{shipment-events}.
+    \item \textbf{Consumidores:} G8 y G7 consumen los eventos asíncronamente desde el Broker.
   \end{itemize}
-  \textbf{Decisión del equipo:} Debemos acordar esto con G9 antes del 16 de Junio.
 \end{alertbox}
 
 \subsection{Formato estándar del evento}
@@ -451,12 +448,12 @@ Cada evento que publiquemos debe seguir esta estructura:
   \toprule
   \textbf{event\_type} & \textbf{Transición} & \textbf{Consumidor principal} \\
   \midrule
-  \texttt{ShipmentCreated}    & $\emptyset \rightarrow$ \texttt{PENDING}     & G9 (notifica al cliente), G10 \\
-  \texttt{ShipmentInTransit}  & \texttt{PENDING} $\rightarrow$ \texttt{IN\_TRANSIT}  & G9 (``Tu paquete va en camino'') \\
-  \texttt{ShipmentDelivered}  & \texttt{IN\_TRANSIT} $\rightarrow$ \texttt{DELIVERED} & G9 (``Tu paquete llegó''), G10 \\
-  \texttt{ShipmentCancelled}  & \texttt{PENDING} $\rightarrow$ \texttt{CANCELLED}    & G9, G5 (confirmar cancelación) \\
-  \texttt{ShipmentFailed}     & \texttt{IN\_TRANSIT} $\rightarrow$ \texttt{FAILED}    & G9 (``Hubo un problema''), G5 \\
-  \texttt{ShipmentReturned}   & \texttt{DELIVERED} $\rightarrow$ \texttt{RETURNED}    & G9, G5, G10 \\
+  \texttt{ShipmentCreated}    & $\emptyset \rightarrow$ \texttt{PENDING}     & G8 (notifica al cliente), G7 \\
+  \texttt{ShipmentInTransit}  & \texttt{PENDING} $\rightarrow$ \texttt{IN\_TRANSIT}  & G8 (``Tu paquete va en camino'') \\
+  \texttt{ShipmentDelivered}  & \texttt{IN\_TRANSIT} $\rightarrow$ \texttt{DELIVERED} & G8 (``Tu paquete llegó''), G7 \\
+  \texttt{ShipmentCancelled}  & \texttt{PENDING} $\rightarrow$ \texttt{CANCELLED}    & G8, G5 (confirmar cancelación) \\
+  \texttt{ShipmentFailed}     & \texttt{IN\_TRANSIT} $\rightarrow$ \texttt{FAILED}    & G8 (``Hubo un problema''), G5 \\
+  \texttt{ShipmentReturned}   & \texttt{DELIVERED} $\rightarrow$ \texttt{RETURNED}    & G8, G5, G7 \\
   \bottomrule
 \end{tabularx}
 \caption{Catálogo completo de eventos del servicio de despacho.}
@@ -480,7 +477,7 @@ Cada evento que publiquemos debe seguir esta estructura:
     de estado, recursos en plural). \\
   \textbf{Eventos} &
     Emitimos eventos (Sección~\ref{sec:eventos}) en cada transición de estado,
-    usando webhooks HTTP o el mecanismo acordado con G9. \\
+    usando el Event Broker (tópico \texttt{shipment-events}). \\
   \textbf{Consistencia Eventual} &
     El despacho no es instantáneo. El usuario ve \texttt{PENDING} inmediatamente,
     y los estados cambian de forma asíncrona (simulación temporizada). Los otros
@@ -525,7 +522,7 @@ Cada evento que publiquemos debe seguir esta estructura:
     en Supabase/Firebase. Tabla \texttt{shipments} con persistencia real. \\
   4 & Integración &
     \textbf{7 Jul} &
-    Conexión real con G5 y G9. Script de simulación temporal:
+    Conexión real con G5 y G8. Script de simulación temporal:
     \texttt{PENDING} $\xrightarrow{\text{30s}}$ \texttt{IN\_TRANSIT}
     $\xrightarrow{\text{60s}}$ \texttt{DELIVERED}, emitiendo eventos en cada paso. \\
   5 & Defensa Final &
@@ -553,7 +550,7 @@ Cada evento que publiquemos debe seguir esta estructura:
   Framework    & Python + FastAPI  & Rápido de desarrollar, tipado, documentación automática (Swagger). \\
   Hosting      & Render (Free)     & Tier gratuito suficiente para el proyecto. \\
   Base de datos& Supabase (PostgreSQL) & Tier gratuito, interfaz web para inspección, compatible con SQL estándar. \\
-  Eventos      & Webhooks HTTP     & Sin infraestructura adicional; un simple \texttt{POST} a la URL de G9. \\
+  Eventos      & Event Broker (Pub/Sub) & Publicación asíncrona en tópico global \texttt{shipment-events}. \\
   Versionado   & GitHub            & Repositorio del equipo con ramas por fase. \\
   \bottomrule
 \end{tabularx}
@@ -615,15 +612,15 @@ Cada evento que publiquemos debe seguir esta estructura:
   \node[extbox, below=1.5cm of g1]       (g5)  {G5\\\relax Pedidos};
   \node[box, right=3cm of g5]            (g6)  {G6\\\relax Despachos};
   \node[db, below=1.5cm of g6]           (db)  {Supabase};
-  \node[extbox, right=3cm of g6]         (g9)  {G9\\\relax Notificaciones};
-  \node[extbox, below=1.5cm of g9]       (g10) {G10\\\relax Reportería};
+  \node[extbox, right=3cm of g6]         (g8)  {G8\\\relax Pago Simulado\\y Notificados};
+  \node[extbox, below=1.5cm of g8]       (g7)  {G7\\\relax Reportería\\Batch y Streaming};
 
   % Flechas
   \draw[arr, info] (g5)  -- node[above, font=\scriptsize] {\texttt{POST}} (g6);
   \draw[arr, info] (g1)  -| node[above left, font=\scriptsize] {\texttt{GET}} (g6);
   \draw[arr, primary] (g6) -- node[left, font=\scriptsize] {SQL} (db);
-  \draw[arr, success] (g6) -- node[above, font=\scriptsize] {Webhook} (g9);
-  \draw[arr, success] (g6) |- node[below right, font=\scriptsize] {Evento} (g10);
+  \draw[arr, success] (g6) -- node[above, font=\scriptsize] {Publish Event} (g8);
+  \draw[arr, success] (g6) |- node[below right, font=\scriptsize] {Evento} (g7);
 \end{tikzpicture}
 \end{center}
 
@@ -653,7 +650,7 @@ briefing original:
         envío. Esencial para la simulación automática de la Fase 4.
 
   \item \textbf{Mecanismo de eventos:} Especificado que usaremos
-        \textbf{webhooks HTTP} como mecanismo por defecto. El briefing
+        \textbf{Event Broker (Pub/Sub)} como mecanismo. El briefing
         original no aclaraba la tecnología.
 
   \item \textbf{Payloads de eventos:} Agregados ejemplos concretos del
@@ -676,7 +673,7 @@ briefing original:
 \begin{enumerate}[label=\textbf{\arabic*.}]
   \item \textbf{Hoy (11 Jun):} Cada miembro del equipo lee este documento
         completo.
-  \item \textbf{Hoy/Mañana:} Contactar a G5 y G9 para acordar contratos
+  \item \textbf{Hoy/Mañana:} Contactar a G5 y G8 para acordar contratos
         JSON.
   \item \textbf{Antes del 14 Jun:} Generar el documento Swagger/Markdown
         definitivo con los contratos REST y de eventos.
