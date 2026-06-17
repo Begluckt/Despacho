@@ -120,10 +120,11 @@ En caso de fallo, la API responde con un esquema plano de 5 campos:
 
 | Método | Endpoint | Descripción | Consumidores principales |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/v1/shipments` | Crear una orden de despacho (*Shipment*) | Grupo 8 (Ventas) / Integración |
-| `GET` | `/api/v1/shipments/{shipment_id}` | Obtener estado detallado de un despacho | Clientes, Grupo 8 |
-| `GET` | `/api/v1/shipments` | Listar despachos con filtros y paginación | Administración / Operaciones |
-| `PATCH` | `/api/v1/shipments/{shipment_id}` | Actualizar estado del despacho (ej. transiciones de entrega) | Simulación interna, Grupo 5 (Bodega) |
+| `POST` | `/api/v1/shipments/quotes` | Cotizar envío (Tarifa Consolidada) | Grupo 4 (Checkout) |
+| `POST` | `/api/v1/shipments` | Crear despachos multi-origen | Grupo 5 (Pedidos) |
+| `GET` | `/api/v1/shipments/{shipment_id}` | Obtener estado detallado de un despacho | Clientes, Grupo 5 |
+| `GET` | `/api/v1/shipments` | Listar despachos con filtros y paginación | Grupo 7 (Reportería) |
+| `PATCH` | `/api/v1/shipments/{shipment_id}` | Actualizar estado del despacho | Simulación interna |
 | `GET` | `/api/v1/health` | Diagnóstico de salud del servicio | Monitoreo del ecosistema |
 
 ---

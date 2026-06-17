@@ -234,7 +234,8 @@ El servicio de \textbf{Despacho y Logística (G6)} es responsable de gestionar e
   \toprule
   \textbf{Método} & \textbf{Ruta} & \textbf{Descripción} & \textbf{Consumidor} \\
   \midrule
-  \httpmethod{post}{POST}   & \texttt{/shipments}                  & Crear un nuevo despacho          & G5 \\
+  \httpmethod{post}{POST}   & \texttt{/shipments/quotes}           & Cotizar envío consolidado        & G4 \\
+  \httpmethod{post}{POST}   & \texttt{/shipments}                  & Crear despachos multi-origen     & G5 \\
   \httpmethod{get}{GET}     & \texttt{/shipments/\{id\}}           & Consultar estado de un despacho  & G1, G5 \\
   \httpmethod{get}{GET}     & \texttt{/shipments?order\_id=\{x\}}  & Buscar despacho por pedido       & G5 \\
   \httpmethod{patch}{PATCH} & \texttt{/shipments/\{id\}}           & Actualizar estado del despacho   & Interno \\
