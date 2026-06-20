@@ -31,8 +31,8 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="API de Despacho y Logística --- Grupo 6",
-    description="Servicio de gestión de despachos v1.1",
-    version="1.1.0"
+    description="Servicio de gestión de despachos v1.2",
+    version="1.2.0"
 )
 
 # Transiciones de estado permitidas
@@ -455,6 +455,6 @@ async def health():
     return HealthResponse(
         status="ok",
         service="g6-despacho",
-        version="1.1.0",
+        version="1.2.0",
         timestamp=datetime.now(timezone.utc)
     )
