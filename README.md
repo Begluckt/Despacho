@@ -30,7 +30,7 @@ El repositorio está organizado de la siguiente manera:
   * [`briefing/`](docs/briefing/): Briefing técnico del servicio.
     * 📑 **[G6_Logistica_Briefing.pdf](docs/briefing/G6_Logistica_Briefing.pdf)**: Documento compilado final.
     * 📄 [G6_Logistica_Briefing.tex](docs/briefing/G6_Logistica_Briefing.tex): Código fuente en LaTeX.
-* **[`documentacion_extra_anexos/`](documentacion_extra_anexos/)**: Documentos de trabajo del grupo e insumos de revisión docente.
+
 * **[`openapi.yaml`](openapi.yaml)**: Especificación OpenAPI 3.0.3 v1.2 formal.
 * **[`Dockerfile`](Dockerfile)**: Archivo de configuración para la contenedorización del servicio.
 
