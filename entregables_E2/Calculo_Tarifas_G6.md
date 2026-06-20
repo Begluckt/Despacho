@@ -23,7 +23,16 @@ El peso que se utiliza para calcular el costo **no es siempre el peso físico**.
 
 ## 2. Zonificación de Destinos y Orígenes
 
-Hemos categorizado las ciudades de Chile en cinco grandes macro-zonas de destino (NORTE, CENTRO_NORTE, CENTRO, CENTRO_SUR, SUR) y cruzamos el centro de distribución de origen logístico (NORTE, CENTRO, SUR) con la ciudad del cliente para determinar el tipo de tarifa a aplicar:
+Hemos categorizado las ciudades de Chile en cinco grandes macro-zonas de destino y cruzamos el centro de distribución de origen logístico (NORTE, CENTRO, SUR) con la ciudad del cliente para determinar el tipo de tarifa a aplicar.
+
+### Distribución de Ciudades por Macro-Zona de Destino
+- **NORTE:** Arica, Iquique, Antofagasta
+- **CENTRO_NORTE:** Copiapó, La Serena, Coquimbo
+- **CENTRO:** Santiago, Valparaíso, Rancagua
+- **CENTRO_SUR:** Talca, Chillán, Concepción
+- **SUR:** Temuco, Valdivia, Puerto Montt, Punta Arenas
+
+### Matriz de Cruce (Origen vs Destino)
 
 | Centro de Origen | Zona de Destino | Tipo de Tarifa |
 | :--- | :--- | :--- |
