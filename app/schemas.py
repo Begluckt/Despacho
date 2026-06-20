@@ -1,7 +1,14 @@
 from datetime import datetime
 from enum import Enum
 from typing import Any, List, Optional
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
+from pydantic.alias_generators import to_camel
+
+class CamelModel(BaseModel):
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        populate_by_name=True,
+    )
 
 class ShipmentStatus(str, Enum):
     PENDING = "PENDING"
@@ -11,12 +18,35 @@ class ShipmentStatus(str, Enum):
     FAILED = "FAILED"
     RETURNED = "RETURNED"
 
-class ShipmentCreate(BaseModel):
+class OriginCD(str, Enum):
+    NORTE = "NORTE"
+    CENTRO = "CENTRO"
+    SUR = "SUR"
+
+class DimensionsCm(CamelModel):
+    length: float = Field(..., gt=0)
+    width: float = Field(..., gt=0)
+    height: float = Field(..., gt=0)
+
+class PackageInput(CamelModel):
+    origin_cd: OriginCD
+    weight_kg: float = Field(..., gt=0)
+    dimensions_cm: DimensionsCm
+
+class QuoteRequest(CamelModel):
+    city: str = Field(..., max_length=100)
+    packages: List[PackageInput]
+
+class QuoteResponse(CamelModel):
+    total_shipping_cost: int
+    currency: str = "CLP"
+
+class ShipmentCreate(CamelModel):
     order_id: str = Field(..., description="ID único del pedido de G5")
     customer_name: str = Field(..., max_length=200, description="Nombre del destinatario")
     address: str = Field(..., max_length=500, description="Dirección física de entrega")
     city: str = Field(..., max_length=100, description="Ciudad de destino")
-    weight_kg: float = Field(..., gt=0, le=500.0, description="Peso del paquete en kg, debe ser mayor a 0")
+    packages: List[PackageInput]
 
     @field_validator('order_id', 'customer_name', 'address', 'city')
     @classmethod
@@ -25,29 +55,32 @@ class ShipmentCreate(BaseModel):
             raise ValueError("El campo no puede estar vacío o contener solo espacios")
         return v.strip()
 
-class ShipmentResponse(BaseModel):
+class ShipmentResponse(CamelModel):
     shipment_id: str
     order_id: str
     customer_name: str
     address: str
     city: str
+    origin_cd: str
+    volumetric_weight: float
+    shipping_cost: int
     weight_kg: float
     status: ShipmentStatus
     created_at: datetime
     updated_at: datetime
     estimated_delivery: Optional[datetime] = None
 
-class ShipmentUpdate(BaseModel):
+class ShipmentUpdate(CamelModel):
     status: ShipmentStatus = Field(..., description="Nuevo estado para la transición")
 
-class ShipmentUpdateResponse(BaseModel):
+class ShipmentUpdateResponse(CamelModel):
     shipment_id: str
     order_id: str
     status: ShipmentStatus
     previous_status: ShipmentStatus
     updated_at: datetime
 
-class ShipmentListItem(BaseModel):
+class ShipmentListItem(CamelModel):
     shipment_id: str
     order_id: str
     status: ShipmentStatus
@@ -55,19 +88,19 @@ class ShipmentListItem(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-class ShipmentListResponse(BaseModel):
+class ShipmentListResponse(CamelModel):
     total: int
     limit: int
     offset: int
     shipments: List[ShipmentListItem]
 
-class HealthResponse(BaseModel):
+class HealthResponse(CamelModel):
     status: str
     service: str
     version: str
     timestamp: datetime
 
-class ErrorResponse(BaseModel):
+class ErrorResponse(CamelModel):
     timestamp: datetime
     status: int
     code: str

@@ -11,8 +11,10 @@ El microservicio se encarga de la gestión del ciclo de vida de los envíos (*Sh
 El repositorio está organizado de la siguiente manera:
 
 * **[`app/`](app/)**: Código fuente en Python del mock funcional (FastAPI).
-  * [`main.py`](app/main.py): Lógica de endpoints, validaciones e inicialización de la API.
-  * [`schemas.py`](app/schemas.py): Modelos de datos y schemas Pydantic (alineados con el contrato).
+  * [`main.py`](app/main.py): Endpoints, pricing engine y lógica de negocio.
+  * [`schemas.py`](app/schemas.py): Modelos Pydantic v1.1 (camelCase).
+  * [`models.py`](app/models.py): Modelos SQLAlchemy (PostgreSQL).
+  * [`database.py`](app/database.py): Conexión a Supabase.
 * **[`docs/`](docs/)**: Documentación técnica oficial.
   * [`contratos/`](docs/contratos/): Contrato de la API REST, eventos, C4 y matriz de dependencias.
     * [`v1.0/`](docs/contratos/v1.0/): Versión inicial del contrato.
@@ -25,7 +27,8 @@ El repositorio está organizado de la siguiente manera:
   * [`briefing/`](docs/briefing/): Briefing técnico del servicio.
     * 📑 **[G6_Logistica_Briefing.pdf](docs/briefing/G6_Logistica_Briefing.pdf)**: Documento compilado final.
     * 📄 [G6_Logistica_Briefing.tex](docs/briefing/G6_Logistica_Briefing.tex): Código fuente en LaTeX.
-* **[`documentacion_extra_anexos/`](documentacion_extra_anexos/)**: Documentos de trabajo del grupo e insumos de revisión docente (anteriormente `documentos_u`).
+* **[`documentacion_extra_anexos/`](documentacion_extra_anexos/)**: Documentos de trabajo del grupo e insumos de revisión docente.
+* **[`openapi.yaml`](openapi.yaml)**: Especificación OpenAPI 3.0.3 v1.1 formal.
 * **[`Dockerfile`](Dockerfile)**: Archivo de configuración para la contenedorización del servicio.
 
 ---
@@ -40,6 +43,8 @@ El repositorio está organizado de la siguiente manera:
 ---
 
 ## ⚙️ Configuración y Ejecución Local
+
+Este servicio ahora utiliza **Supabase (PostgreSQL)** como base de datos. Para ejecutarlo localmente, requieres configurar la variable de entorno `DATABASE_URL`.
 
 ### Opción 1: Ejecución con Python Directo
 
@@ -63,7 +68,13 @@ El repositorio está organizado de la siguiente manera:
    pip install -r requirements.txt
    ```
 
-4. **Levantar el servidor de desarrollo:**
+4. **Configurar Variable de Entorno:**
+   Crea un archivo `.env` en la raíz (o configura en tu entorno):
+   ```bash
+   DATABASE_URL="postgresql://postgres:[PASSWORD]@db.[ref].supabase.co:5432/postgres"
+   ```
+
+5. **Levantar el servidor de desarrollo:**
    ```bash
    uvicorn app.main:app --reload
    ```
@@ -92,9 +103,19 @@ Una vez levantado el servidor, puedes interactuar directamente con el contrato R
 
 ---
 
+## 📋 Modelo de Datos (v1.1)
+
+El mock ahora utiliza PostgreSQL (vía Supabase) con 3 tablas clave para soportar el contrato v1.1:
+
+1. **`shipments`**: Registra individualmente cada caja/paquete (eliminando la restricción UNIQUE en `order_id` para permitir envíos multi-origen). Almacena campos volumétricos, costos (`shipping_cost`), zona de origen (`origin_cd`) y estado actual.
+2. **`shipment_status_history`**: Mantiene un historial inmutable de todas las transiciones de estado por cada `shipment_id`.
+3. **`outbox_events`**: Implementación del patrón transaccional Outbox. Almacena en la misma transacción de BD los eventos generados (en formato JSON Envelope) listos para ser despachados a Kafka por un worker asíncrono.
+
+---
+
 ## 📋 Resumen del Contrato de la API
 
-El servicio implementa los estándares definidos en el contrato oficial:
+El servicio implementa los estándares definidos en el contrato oficial v1.1:
 
 ### Cabeceras (Headers) Obligatorias
 
@@ -137,11 +158,11 @@ El servicio publica actualizaciones en el tópico Kafka `shipment-events`. El so
 {
   "eventId": "uuid-evento-9999",
   "eventType": "ShipmentCreated",
-  "version": "1.0",
+  "version": "1.1",
   "occurredAt": "2026-06-16T17:05:00Z",
-  "producer": "G6-despacho",
+  "producer": "g6-despacho",
   "correlationId": "uuid-correlation-12345",
-  "data": { ... }
+  "payload": { ... }
 }
 ```
 
