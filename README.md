@@ -126,13 +126,17 @@ Todas las solicitudes REST deben incluir:
 * `Idempotency-Key` (UUIDv4, opcional en lecturas): Clave para garantizar idempotencia en `POST` y `PATCH`.
 
 ### Estructura de Errores Unificada
-En caso de fallo, la API responde con un esquema plano de 5 campos:
+En caso de fallo, la API responde con un esquema alineado al estándar de la organización, que consta de los siguientes campos:
 ```json
 {
-  "timestamp": "2026-06-16T17:00:00Z",
-  "status": 400,
   "code": "BAD_REQUEST_SHIPMENT",
   "message": "Mensaje descriptivo del error para el cliente.",
+  "details": [
+    {
+      "field": "nombre_campo",
+      "message": "Descripción del error de validación"
+    }
+  ],
   "correlationId": "uuid-correlation-12345"
 }
 ```
