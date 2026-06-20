@@ -385,8 +385,8 @@ $$ \text{Costo Total} = \sum_{i=1}^{n} \left( \text{Costo Base}_i + (\text{Peso 
 {
   "city": "Santiago",
   "packages": [
-    { "origin_cd": "NORTE", "weight_kg": 2.0, "dimensions_cm": { "length": 40, "width": 30, "height": 20 } },
-    { "origin_cd": "CENTRO", "weight_kg": 1.0, "dimensions_cm": { "length": 15, "width": 10, "height": 5 } }
+    { "originCd": "NORTE", "weightKg": 2.0, "dimensionsCm": { "length": 40, "width": 30, "height": 20 } },
+    { "originCd": "CENTRO", "weightKg": 1.0, "dimensionsCm": { "length": 15, "width": 10, "height": 5 } }
   ]
 }
 \end{lstlisting}
@@ -395,7 +395,7 @@ $$ \text{Costo Total} = \sum_{i=1}^{n} \left( \text{Costo Base}_i + (\text{Peso 
 
 \begin{lstlisting}
 {
-  "total_shipping_cost": 10100,
+  "totalShippingCost": 10100,
   "currency": "CLP"
 }
 \end{lstlisting}
@@ -415,13 +415,13 @@ $$ \text{Costo Total} = \sum_{i=1}^{n} \left( \text{Costo Base}_i + (\text{Peso 
 
 \begin{lstlisting}
 {
-  "order_id": "ORD-20260611-001",
-  "customer_name": "María González",
+  "orderId": "ORD-20260611-001",
+  "customerName": "María González",
   "address": "Av. Providencia 1234, Depto 56",
   "city": "Santiago",
   \"packages\": [
-    { \"origin_cd\": \"NORTE\", \"weight_kg\": 2.5, \"dimensions_cm\": { \"length\": 40, \"width\": 30, \"height\": 20 } },
-    { \"origin_cd\": \"CENTRO\", \"weight_kg\": 1.0, \"dimensions_cm\": { \"length\": 15, \"width\": 10, \"height\": 5 } }
+    { \"originCd\": \"NORTE\", \"weightKg\": 2.5, \"dimensionsCm\": { \"length\": 40, \"width\": 30, \"height\": 20 } },
+    { \"originCd\": \"CENTRO\", \"weightKg\": 1.0, \"dimensionsCm\": { \"length\": 15, \"width\": 10, \"height\": 5 } }
   ]
 }
 \end{lstlisting}
@@ -487,9 +487,9 @@ Fórmula: \texttt{Peso Volumétrico (kg) = (Largo\_cm * Ancho\_cm * Alto\_cm) / 
   "address": "Av. Providencia 1234",
   "packages": [
     {
-      "origin_cd": "NORTE",
-      "weight_kg": 2.5,
-      "dimensions_cm": { "length": 40, "width": 30, "height": 20 }
+      "originCd": "NORTE",
+      "weightKg": 2.5,
+      "dimensionsCm": { "length": 40, "width": 30, "height": 20 }
     }
   ]
 }
@@ -499,7 +499,7 @@ Fórmula: \texttt{Peso Volumétrico (kg) = (Largo\_cm * Ancho\_cm * Alto\_cm) / 
 
 \begin{lstlisting}
 {
-  "total_shipping_cost": 6600,
+  "totalShippingCost": 6600,
   "currency": "CLP"
 }
 \end{lstlisting}
@@ -518,16 +518,16 @@ Llamado por \textbf{G1 (Frontend)} y \textbf{G5 (Pedidos o Order Management)}.
 \begin{lstlisting}
 [
   {
-  "shipment_id": "SHP-a1b2c3d4",
-  "order_id": "ORD-20260611-001",
-  "customer_name": "María González",
+  "shipmentId": "SHP-a1b2c3d4",
+  "orderId": "ORD-20260611-001",
+  "customerName": "María González",
   "address": "Av. Providencia 1234, Depto 56",
   "city": "Santiago",
-  "weight_kg": 3.2,
+  "weightKg": 3.2,
   "status": "IN_TRANSIT",
-  "created_at": "2026-06-11T14:00:00Z",
-  "updated_at": "2026-06-11T14:30:00Z",
-  "estimated_delivery": "2026-06-14T18:00:00Z"
+  "createdAt": "2026-06-11T14:00:00Z",
+  "updatedAt": "2026-06-11T14:30:00Z",
+  "estimatedDelivery": "2026-06-14T18:00:00Z"
 }
 ]
 \end{lstlisting}
@@ -546,7 +546,7 @@ Llamado por \textbf{G1 (Frontend)} y \textbf{G5 (Pedidos o Order Management)}.
 
 \noindent\rule{\textwidth}{0.4pt}
 
-% ── GET /shipments?order_id= ─────────────────────────────────────────────────
+% ── GET /shipments?orderId= ─────────────────────────────────────────────────
 \subsection{Buscar Despacho por Order ID}
 
 \routeheader{get}{GET}{/api/v1/shipments?order\_id=\{order\_id\}}
@@ -559,11 +559,11 @@ Llamado por \textbf{G1 (Frontend)} y \textbf{G5 (Pedidos o Order Management)}.
 \begin{lstlisting}
 [
   {
-  "shipment_id": "SHP-a1b2c3d4",
-  "order_id": "ORD-20260611-001",
+  "shipmentId": "SHP-a1b2c3d4",
+  "orderId": "ORD-20260611-001",
   "status": "PENDING",
-  "created_at": "2026-06-11T14:00:00Z",
-  "estimated_delivery": "2026-06-14T18:00:00Z"
+  "createdAt": "2026-06-11T14:00:00Z",
+  "estimatedDelivery": "2026-06-14T18:00:00Z"
 }
 ]
 \end{lstlisting}
@@ -604,11 +604,11 @@ Llamado por \textbf{G1 (Frontend)} y \textbf{G5 (Pedidos o Order Management)}.
 
 \begin{lstlisting}
 {
-  "shipment_id": "SHP-a1b2c3d4",
-  "order_id": "ORD-20260611-001",
+  "shipmentId": "SHP-a1b2c3d4",
+  "orderId": "ORD-20260611-001",
   "status": "IN_TRANSIT",
-  "previous_status": "PENDING",
-  "updated_at": "2026-06-11T14:30:00Z"
+  "previousStatus": "PENDING",
+  "updatedAt": "2026-06-11T14:30:00Z"
 }
 \end{lstlisting}
 
@@ -664,12 +664,12 @@ Llamado por \textbf{G1 (Frontend)} y \textbf{G5 (Pedidos o Order Management)}.
   "offset": 0,
   "shipments": [
     {
-      "shipment_id": "SHP-a1b2c3d4",
-      "order_id": "ORD-20260611-001",
+      "shipmentId": "SHP-a1b2c3d4",
+      "orderId": "ORD-20260611-001",
       "status": "DELIVERED",
       "city": "Santiago",
-      "created_at": "2026-06-11T14:00:00Z",
-      "updated_at": "2026-06-11T16:00:00Z"
+      "createdAt": "2026-06-11T14:00:00Z",
+      "updatedAt": "2026-06-11T16:00:00Z"
     }
   ]
 }
@@ -705,7 +705,7 @@ Todos los errores siguen el mismo formato base. Opcionalmente, se puede incluir 
   "timestamp": "2026-06-11T14:05:00Z",
   "status": 422,
   "code": "VALIDATION_ERROR",
-  "message": "El campo weight_kg debe ser mayor a 0.",
+  "message": "El campo weightKg debe ser mayor a 0.",
   "correlationId": "req-123e4567"
 }
 \end{lstlisting}
@@ -809,14 +809,14 @@ Se emite cuando G5 crea exitosamente un nuevo despacho.
   "payload": {
     \"package_index\": 1,
     \"total_packages\": 2,
-    "shipment_id": "SHP-a1b2c3d4",
-    "order_id": "ORD-20260611-001",
-    "customer_name": "María González",
+    "shipmentId": "SHP-a1b2c3d4",
+    "orderId": "ORD-20260611-001",
+    "customerName": "María González",
     "address": "Av. Providencia 1234, Depto 56",
     "city": "Santiago",
-    "weight_kg": 3.2,
+    "weightKg": 3.2,
     "status": "PENDING",
-    "estimated_delivery": "2026-06-14T18:00:00Z"
+    "estimatedDelivery": "2026-06-14T18:00:00Z"
   }
 }
 \end{lstlisting}
@@ -843,11 +843,11 @@ Se emite cuando el paquete sale a reparto.
   "payload": {
     \"package_index\": 1,
     \"total_packages\": 2,
-    "shipment_id": "SHP-a1b2c3d4",
-    "order_id": "ORD-20260611-001",
-    "previous_status": "PENDING",
-    "new_status": "IN_TRANSIT",
-    "customer_name": "María González",
+    "shipmentId": "SHP-a1b2c3d4",
+    "orderId": "ORD-20260611-001",
+    "previousStatus": "PENDING",
+    "newStatus": "IN_TRANSIT",
+    "customerName": "María González",
     "city": "Santiago"
   }
 }
@@ -875,13 +875,13 @@ Se emite cuando el paquete es entregado exitosamente.
   "payload": {
     \"package_index\": 1,
     \"total_packages\": 2,
-    "shipment_id": "SHP-a1b2c3d4",
-    "order_id": "ORD-20260611-001",
-    "previous_status": "IN_TRANSIT",
-    "new_status": "DELIVERED",
-    "customer_name": "María González",
+    "shipmentId": "SHP-a1b2c3d4",
+    "orderId": "ORD-20260611-001",
+    "previousStatus": "IN_TRANSIT",
+    "newStatus": "DELIVERED",
+    "customerName": "María González",
     "city": "Santiago",
-    "delivered_at": "2026-06-11T15:00:00Z"
+    "deliveredAt": "2026-06-11T15:00:00Z"
   }
 }
 \end{lstlisting}
@@ -908,11 +908,11 @@ Se emite cuando un despacho es cancelado antes de salir a reparto.
   "payload": {
     \"package_index\": 1,
     \"total_packages\": 2,
-    "shipment_id": "SHP-a1b2c3d4",
-    "order_id": "ORD-20260611-001",
-    "previous_status": "PENDING",
-    "new_status": "CANCELLED",
-    "customer_name": "María González",
+    "shipmentId": "SHP-a1b2c3d4",
+    "orderId": "ORD-20260611-001",
+    "previousStatus": "PENDING",
+    "newStatus": "CANCELLED",
+    "customerName": "María González",
     "reason": "Pedido anulado por el cliente"
   }
 }
@@ -940,11 +940,11 @@ Se emite cuando un intento de entrega falla.
   "payload": {
     \"package_index\": 1,
     \"total_packages\": 2,
-    "shipment_id": "SHP-a1b2c3d4",
-    "order_id": "ORD-20260611-001",
-    "previous_status": "IN_TRANSIT",
-    "new_status": "FAILED",
-    "customer_name": "María González",
+    "shipmentId": "SHP-a1b2c3d4",
+    "orderId": "ORD-20260611-001",
+    "previousStatus": "IN_TRANSIT",
+    "newStatus": "FAILED",
+    "customerName": "María González",
     "reason": "Destinatario ausente"
   }
 }
@@ -972,11 +972,11 @@ Se emite cuando un paquete entregado es devuelto.
   "payload": {
     \"package_index\": 1,
     \"total_packages\": 2,
-    "shipment_id": "SHP-a1b2c3d4",
-    "order_id": "ORD-20260611-001",
-    "previous_status": "DELIVERED",
-    "new_status": "RETURNED",
-    "customer_name": "María González",
+    "shipmentId": "SHP-a1b2c3d4",
+    "orderId": "ORD-20260611-001",
+    "previousStatus": "DELIVERED",
+    "newStatus": "RETURNED",
+    "customerName": "María González",
     "reason": "Producto incorrecto"
   }
 }
@@ -1012,11 +1012,11 @@ confirmado y necesita ser despachado.
 
 \begin{lstlisting}
 {
-  "order_id": "ORD-20260611-001",
-  "customer_name": "María González",
+  "orderId": "ORD-20260611-001",
+  "customerName": "María González",
   "address": "Av. Providencia 1234, Depto 56",
   "city": "Santiago",
-  "weight_kg": 3.2
+  "weightKg": 3.2
 }
 \end{lstlisting}
 
@@ -1072,13 +1072,13 @@ Define \textbf{qué datos le enviamos a G8} en cada cambio de estado.
   "payload": {
     \"package_index\": 1,
     \"total_packages\": 2,
-    "shipment_id": "SHP-a1b2c3d4",
-    "order_id": "ORD-20260611-001",
-    "previous_status": "IN_TRANSIT",
-    "new_status": "DELIVERED",
-    "customer_name": "María González",
+    "shipmentId": "SHP-a1b2c3d4",
+    "orderId": "ORD-20260611-001",
+    "previousStatus": "IN_TRANSIT",
+    "newStatus": "DELIVERED",
+    "customerName": "María González",
     "city": "Santiago",
-    "delivered_at": "2026-06-11T15:00:00Z"
+    "deliveredAt": "2026-06-11T15:00:00Z"
   }
 }
 \end{lstlisting}
@@ -1270,23 +1270,23 @@ Se elimina la restricción UNIQUE en \texttt{order\_id} para permitir 1:N.
 
 \begin{lstlisting}
 CREATE TABLE shipments (
-    shipment_id        TEXT PRIMARY KEY,
-    order_id           TEXT NOT NULL,
-    customer_name      TEXT NOT NULL,
+    shipmentId        TEXT PRIMARY KEY,
+    orderId           TEXT NOT NULL,
+    customerName      TEXT NOT NULL,
     address            TEXT NOT NULL,
     city               TEXT NOT NULL,
-    origin_cd          TEXT NOT NULL, -- 'NORTE', 'CENTRO', 'SUR'
-    volumetric_weight  REAL NOT NULL,
-    shipping_cost      INTEGER NOT NULL,
-    weight_kg          REAL NOT NULL CHECK (weight_kg > 0),
+    originCd          TEXT NOT NULL, -- 'NORTE', 'CENTRO', 'SUR'
+    volumetricWeight  REAL NOT NULL,
+    shippingCost      INTEGER NOT NULL,
+    weightKg          REAL NOT NULL CHECK (weightKg > 0),
     status             TEXT NOT NULL DEFAULT 'PENDING'
                        CHECK (status IN (
                            'PENDING', 'IN_TRANSIT', 'DELIVERED',
                            'CANCELLED', 'FAILED', 'RETURNED'
                        )),
-    created_at         TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at         TIMESTAMP NOT NULL DEFAULT NOW(),
-    estimated_delivery TIMESTAMP
+    createdAt         TIMESTAMP NOT NULL DEFAULT NOW(),
+    updatedAt         TIMESTAMP NOT NULL DEFAULT NOW(),
+    estimatedDelivery TIMESTAMP
 );
 \end{lstlisting}
 
@@ -1296,9 +1296,9 @@ Garantiza la trazabilidad (línea de tiempo) inmutable para el frontend.
 \begin{lstlisting}
 CREATE TABLE shipment_status_history (
     id SERIAL PRIMARY KEY,
-    shipment_id TEXT REFERENCES shipments(shipment_id),
+    shipmentId TEXT REFERENCES shipments(shipmentId),
     status TEXT NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    createdAt TIMESTAMP NOT NULL DEFAULT NOW()
 );
 \end{lstlisting}
 
@@ -1311,7 +1311,7 @@ CREATE TABLE outbox_events (
     event_type TEXT NOT NULL,
     payload JSONB NOT NULL,
     status TEXT NOT NULL DEFAULT 'PENDING', -- PENDING, PUBLISHED
-    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    createdAt TIMESTAMP NOT NULL DEFAULT NOW()
 );
 \end{lstlisting}
 
