@@ -136,8 +136,8 @@
 \begin{tabular}{rl}
   \textbf{Proyecto:}  & Marketplace en la Nube \\
   \textbf{Asignatura:}& Arquitectura de Software \\
-  \textbf{Fecha:}     & 11 de Junio de 2026 \\
-  \textbf{Versión:}   & 1.0 --- Revisada y corregida \\
+  \textbf{Fecha:}     & 20 de Junio de 2026 \\
+  \textbf{Versión:}   & 1.2 --- Alineación a Estándares Organizacionales \\
 \end{tabular}
 
 \vfill
@@ -164,6 +164,11 @@ Nuestro servicio es el equivalente interno a una empresa de courier (Starken, Ch
   \item \textbf{Crear un despacho:} Cuando un cliente compra exitosamente, el sistema de pedidos nos avisa para que generemos una orden de envío (\textit{Shipment}).
   \item \textbf{Hacer seguimiento:} Mantener en nuestra base de datos el estado actual de cada paquete.
   \item \textbf{Notificar cambios:} Avisar al resto del ecosistema cuando ocurran transiciones de estado.
+
+  \item \textbf{Alineación v1.2:} Todo el JSON ha sido portado a \textbf{camelCase}.
+        Se ha implementado el formato unificado de Errores (con \texttt{details}),
+        paginación estandarizada, soporte multi-origen (eliminado el UNIQUE de
+        order\_id) y costos por peso volumétrico.
 \end{enumerate}
 
 
@@ -296,22 +301,23 @@ https://<nombre-del-servicio>.onrender.com/api/v1
 \subsubsection*{Request Body}
 \begin{lstlisting}[language=json]
 {
-  "order_id": "ORD-20260611-001",
-  "customer_name": "María González",
+  "orderId": "ORD-20260611-001",
+  "customerName": "María González",
   "address": "Av. Providencia 1234, Depto 56",
   "city": "Santiago",
-  "weight_kg": 3.2
+  "weightKg": 3.2,
+  "originCd": "CD_SANTIAGO"
 }
 \end{lstlisting}
 
 \subsubsection*{Response --- 201 Created}
 \begin{lstlisting}[language=json]
 {
-  "shipment_id": "SHP-a1b2c3d4",
-  "order_id": "ORD-20260611-001",
+  "shipmentId": "SHP-a1b2c3d4",
+  "orderId": "ORD-20260611-001",
   "status": "PENDING",
-  "created_at": "2026-06-11T14:00:00Z",
-  "estimated_delivery": "2026-06-14T18:00:00Z"
+  "createdAt": "2026-06-11T14:00:00Z",
+  "estimatedDelivery": "2026-06-14T18:00:00Z"
 }
 \end{lstlisting}
 
@@ -337,16 +343,18 @@ https://<nombre-del-servicio>.onrender.com/api/v1
 \subsubsection*{Response --- 200 OK}
 \begin{lstlisting}[language=json]
 {
-  "shipment_id": "SHP-a1b2c3d4",
-  "order_id": "ORD-20260611-001",
+  "shipmentId": "SHP-a1b2c3d4",
+  "orderId": "ORD-20260611-001",
   "status": "IN_TRANSIT",
-  "customer_name": "Maria Gonzalez",
+  "customerName": "Maria Gonzalez",
   "address": "Av. Providencia 1234, Depto 56",
   "city": "Santiago",
-  "weight_kg": 3.2,
-  "created_at": "2026-06-11T14:00:00Z",
-  "updated_at": "2026-06-11T14:30:00Z",
-  "estimated_delivery": "2026-06-14T18:00:00Z"
+  "weightKg": 3.2,
+  "originCd": "CD_SANTIAGO",
+  "shippingCost": 2500,
+  "createdAt": "2026-06-11T14:00:00Z",
+  "updatedAt": "2026-06-11T14:30:00Z",
+  "estimatedDelivery": "2026-06-14T18:00:00Z"
 }
 \end{lstlisting}
 
@@ -377,9 +385,9 @@ https://<nombre-del-servicio>.onrender.com/api/v1
 \subsubsection*{Response --- 200 OK}
 \begin{lstlisting}[language=json]
 {
-  "shipment_id": "SHP-a1b2c3d4",
+  "shipmentId": "SHP-a1b2c3d4",
   "status": "DELIVERED",
-  "updated_at": "2026-06-11T15:00:00Z"
+  "updatedAt": "2026-06-11T15:00:00Z"
 }
 \end{lstlisting}
 
@@ -404,6 +412,30 @@ https://<nombre-del-servicio>.onrender.com/api/v1
 \end{infobox}
 
 
+
+% ── Errores Estandarizados ────────────────────────────────────────────────────
+\subsection{Esquema de Errores Unificado}
+
+Hemos alineado las respuestas de error al estándar de la organización, utilizando
+una estructura unificada con campos de detalle:
+
+\begin{lstlisting}[language=json]
+{
+  "code": "BAD_REQUEST_SHIPMENT",
+  "message": "Mensaje descriptivo del error para el cliente.",
+  "details": [
+    {
+      "field": "weightKg",
+      "message": "El peso debe ser mayor a 0"
+    }
+  ],
+  "correlationId": "uuid-correlation-12345"
+}
+\end{lstlisting}
+
+Además, todos los endpoints que devuelven listas usarán el formato paginado con el wrapper \texttt{data} y \texttt{pagination}.
+
+
 % ── G6 / G8 / G7 Eventos ──────────────────────────────────────────────────────
 \section{Contrato de Eventos}
 \label{sec:eventos}
@@ -425,16 +457,20 @@ Cada evento que publiquemos debe seguir esta estructura:
 
 \begin{lstlisting}[language=json]
 {
-  "event_type": "ShipmentDelivered",
-  "event_id": "evt-uuid-autogenerado",
-  "timestamp": "2026-06-11T15:00:00Z",
+  "eventId": "evt-uuid-autogenerado",
+  "eventType": "ShipmentDelivered",
+  "version": "1.2",
+  "occurredAt": "2026-06-11T15:00:00Z",
+  "producer": "g6-despacho",
+  "correlationId": "uuid-correlation-12345",
   "payload": {
-    "shipment_id": "SHP-a1b2c3d4",
-    "order_id": "ORD-20260611-001",
-    "previous_status": "IN_TRANSIT",
-    "new_status": "DELIVERED",
-    "customer_name": "Maria Gonzalez",
-    "city": "Santiago"
+    "shipmentId": "SHP-a1b2c3d4",
+    "orderId": "ORD-20260611-001",
+    "previousStatus": "IN_TRANSIT",
+    "newStatus": "DELIVERED",
+    "customerName": "Maria Gonzalez",
+    "city": "Santiago",
+    "deliveredAt": "2026-06-11T15:00:00Z"
   }
 }
 \end{lstlisting}
@@ -564,16 +600,22 @@ Cada evento que publiquemos debe seguir esta estructura:
 \begin{lstlisting}[language=json, title={\textbf{Tabla: shipments}}]
 {
   "shipment_id":        "TEXT PRIMARY KEY  (ej: SHP-uuid)",
-  "order_id":           "TEXT UNIQUE NOT NULL",
+  "order_id":           "TEXT NOT NULL",
+  "origin_cd":          "TEXT NOT NULL",
   "customer_name":      "TEXT NOT NULL",
   "address":            "TEXT NOT NULL",
   "city":               "TEXT NOT NULL",
   "weight_kg":          "REAL NOT NULL CHECK (weight_kg > 0)",
+  "shipping_cost":      "REAL NOT NULL",
   "status":             "TEXT NOT NULL DEFAULT 'PENDING'",
   "created_at":         "TIMESTAMP DEFAULT NOW()",
   "updated_at":         "TIMESTAMP DEFAULT NOW()",
   "estimated_delivery": "TIMESTAMP"
 }
+
+-- Además agregamos Outbox Pattern:
+-- Tabla outbox_events (eventId, eventType, payload, status)
+-- Tabla shipment_status_history para auditoría.
 \end{lstlisting}
 
 \begin{infobox}
