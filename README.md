@@ -20,15 +20,15 @@ El repositorio está organizado de la siguiente manera:
     * [`v1.0/`](docs/contratos/v1.0/): Versión inicial del contrato.
       * 📑 **[G6_Contrato_API_Despacho.pdf](docs/contratos/v1.0/G6_Contrato_API_Despacho.pdf)**: Documento compilado final.
       * 📄 [G6_Contrato_API_Despacho.tex](docs/contratos/v1.0/G6_Contrato_API_Despacho.tex): Código fuente en LaTeX.
-    * [`v1.1/`](docs/contratos/v1.1/): Soporte Multi-Origen y Tarifas Volumétricas.
-      * 📑 **[G6_Contrato_API_Despacho_v1.1.pdf](docs/contratos/v1.1/G6_Contrato_API_Despacho_v1.1.pdf)**: Documento compilado final.
-      * 📄 [G6_Contrato_API_Despacho_v1.1.tex](docs/contratos/v1.1/G6_Contrato_API_Despacho_v1.1.tex): Código fuente en LaTeX.
+    * [`v1.1/`](docs/contratos/v1.2/): Soporte Multi-Origen y Tarifas Volumétricas.
+      * 📑 **[G6_Contrato_API_Despacho_v1.2.pdf](docs/contratos/v1.2/G6_Contrato_API_Despacho_v1.2.pdf)**: Documento compilado final.
+      * 📄 [G6_Contrato_API_Despacho_v1.2.tex](docs/contratos/v1.2/G6_Contrato_API_Despacho_v1.2.tex): Código fuente en LaTeX.
       * Archivos Markdown individuales para la integración de cada grupo (`G1_Frontend.md`, `G4_Inventario_Checkout.md`, etc.).
   * [`briefing/`](docs/briefing/): Briefing técnico del servicio.
     * 📑 **[G6_Logistica_Briefing.pdf](docs/briefing/G6_Logistica_Briefing.pdf)**: Documento compilado final.
     * 📄 [G6_Logistica_Briefing.tex](docs/briefing/G6_Logistica_Briefing.tex): Código fuente en LaTeX.
 * **[`documentacion_extra_anexos/`](documentacion_extra_anexos/)**: Documentos de trabajo del grupo e insumos de revisión docente.
-* **[`openapi.yaml`](openapi.yaml)**: Especificación OpenAPI 3.0.3 v1.1 formal.
+* **[`openapi.yaml`](openapi.yaml)**: Especificación OpenAPI 3.0.3 v1.2 formal.
 * **[`Dockerfile`](Dockerfile)**: Archivo de configuración para la contenedorización del servicio.
 
 ---
@@ -103,9 +103,9 @@ Una vez levantado el servidor, puedes interactuar directamente con el contrato R
 
 ---
 
-## 📋 Modelo de Datos (v1.1)
+## 📋 Modelo de Datos (v1.2)
 
-El mock ahora utiliza PostgreSQL (vía Supabase) con 3 tablas clave para soportar el contrato v1.1:
+El mock ahora utiliza PostgreSQL (vía Supabase) con 3 tablas clave para soportar el contrato v1.2:
 
 1. **`shipments`**: Registra individualmente cada caja/paquete (eliminando la restricción UNIQUE en `order_id` para permitir envíos multi-origen). Almacena campos volumétricos, costos (`shipping_cost`), zona de origen (`origin_cd`) y estado actual.
 2. **`shipment_status_history`**: Mantiene un historial inmutable de todas las transiciones de estado por cada `shipment_id`.
@@ -115,7 +115,7 @@ El mock ahora utiliza PostgreSQL (vía Supabase) con 3 tablas clave para soporta
 
 ## 📋 Resumen del Contrato de la API
 
-El servicio implementa los estándares definidos en el contrato oficial v1.1:
+El servicio implementa los estándares definidos en el contrato oficial v1.2:
 
 ### Cabeceras (Headers) Obligatorias
 
