@@ -18,7 +18,7 @@ Este documento centraliza los entregables requeridos para la evaluación **E2 Mo
 El modelo se refinó en la **versión 1.2** para soportar logística multi-origen, cobro por volumetría y un entorno asíncrono robusto utilizando el patrón *Transactional Outbox*.
 
 ### Diagrama Entidad-Relación (Mermaid)
-`mermaid
+```mermaid
 erDiagram
     shipments ||--o{ shipment_status_history : "tiene historial"
     shipments {
@@ -49,14 +49,14 @@ erDiagram
         string status "PENDING, PROCESSED"
         timestamp createdAt
     }
-`
+```
 
 ## 5. Colección de pruebas de Contrato
 Se ha diseñado una colección que prueba los endpoints POST, GET y PATCH validando el contrato, los headers obligatorios (X-Request-Id, X-Correlation-Id, X-Consumer) y los parámetros.
 
 Puedes importar el siguiente bloque JSON directamente en Postman/Insomnia o usar el archivo adjunto postman_collection.json.
 
-`json
+```json
 {
   "info": {
     "name": "G6 Despacho v1.2",
@@ -306,4 +306,4 @@ Puedes importar el siguiente bloque JSON directamente en Postman/Insomnia o usar
     }
   ]
 }
-`
+```
