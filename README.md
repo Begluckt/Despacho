@@ -12,7 +12,7 @@ El repositorio está organizado de la siguiente manera:
 
 * **[`app/`](app/)**: Código fuente en Python del mock funcional (FastAPI).
   * [`main.py`](app/main.py): Endpoints, pricing engine y lógica de negocio.
-  * [`schemas.py`](app/schemas.py): Modelos Pydantic v1.1 (camelCase).
+  * [`schemas.py`](app/schemas.py): Modelos Pydantic v1.2 (camelCase).
   * [`models.py`](app/models.py): Modelos SQLAlchemy (PostgreSQL).
   * [`database.py`](app/database.py): Conexión a Supabase.
 * **[`docs/`](docs/)**: Documentación técnica oficial.
@@ -162,7 +162,7 @@ El servicio publica actualizaciones en el tópico Kafka `shipment-events`. El so
 {
   "eventId": "uuid-evento-9999",
   "eventType": "ShipmentCreated",
-  "version": "1.1",
+  "version": "1.2",
   "occurredAt": "2026-06-16T17:05:00Z",
   "producer": "g6-despacho",
   "correlationId": "uuid-correlation-12345",
