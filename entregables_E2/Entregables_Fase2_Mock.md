@@ -8,7 +8,7 @@ Este documento centraliza los entregables requeridos para la evaluación **E2 Mo
 
 ## 2. Mock público o servicio inicial
 **URL:** [https://g6-despacho.onrender.com/docs](https://g6-despacho.onrender.com/docs)
-**Estado:** El servicio mock en FastAPI está implementado. *(Nota: La URL definitiva puede estar en proceso de reconexión tras la transferencia de repositorio a la organización).*
+**Estado:** El servicio mock en FastAPI está implementado, desplegado en Render y conectado a la base de datos Supabase exitosamente.
 
 ## 3. README inicial
 **Evidencia:** El archivo README.md se encuentra en la raíz del repositorio, detallando la arquitectura, la configuración local (Docker y Python) y la documentación de la API.
