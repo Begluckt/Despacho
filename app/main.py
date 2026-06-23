@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 import uuid
-from typing import Optional, List
+from typing import Optional, List, Union
 
 from fastapi import FastAPI, Query, status, Depends, Request, Header
 from fastapi.exceptions import RequestValidationError
@@ -23,7 +23,8 @@ from app.schemas import (
     ShipmentStatus,
     QuoteRequest,
     QuoteResponse,
-    OriginCD
+    OriginCD,
+    ShipmentHistoryResponse
 )
 
 # Inicializar Base de Datos (crea la tabla si no existe)
@@ -137,8 +138,15 @@ async def verify_headers(
 ):
     pass
 
+error_responses = {
+    400: {"model": ErrorResponse},
+    404: {"model": ErrorResponse},
+    409: {"model": ErrorResponse},
+    422: {"model": ErrorResponse},
+    500: {"model": ErrorResponse}
+}
 
-@app.post("/api/v1/shipments/quotes", response_model=QuoteResponse)
+@app.post("/api/v1/shipments/quotes", response_model=QuoteResponse, responses=error_responses)
 async def quote_shipment(request: QuoteRequest):
     total_cost = 0
     for pkg in request.packages:
@@ -147,7 +155,7 @@ async def quote_shipment(request: QuoteRequest):
     return QuoteResponse(total_shipping_cost=total_cost, currency="CLP")
 
 
-@app.post("/api/v1/shipments", response_model=List[str], status_code=status.HTTP_201_CREATED, dependencies=[Depends(verify_headers)])
+@app.post("/api/v1/shipments", response_model=List[str], status_code=status.HTTP_201_CREATED, responses=error_responses, dependencies=[Depends(verify_headers)])
 async def create_shipment(request: Request, shipment_data: ShipmentCreate, db: Session = Depends(get_db)):
     correlation_id = get_correlation_id(request)
             
@@ -243,13 +251,13 @@ def _format_shipment(s: Shipment) -> dict:
     }
 
 
-@app.get("/api/v1/shipments", dependencies=[Depends(verify_headers)])
+@app.get("/api/v1/shipments", response_model=Union[ShipmentListResponse, List[ShipmentResponse]], responses=error_responses, dependencies=[Depends(verify_headers)])
 async def get_shipments(
     request: Request,
-    order_id: Optional[str] = None,
+    order_id: Optional[str] = Query(None, alias="orderId"),
     status_filter: Optional[ShipmentStatus] = Query(None, alias="status"),
     page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
+    page_size: int = Query(20, ge=1, le=100, alias="pageSize"),
     db: Session = Depends(get_db)
 ):
     correlation_id = get_correlation_id(request)
@@ -258,7 +266,7 @@ async def get_shipments(
     if order_id:
         shipments = db.query(Shipment).filter(Shipment.order_id == order_id).all()
         if shipments:
-            return [_format_shipment(s) for s in shipments]
+            return [ShipmentResponse(**_format_shipment(s)) for s in shipments]
         
         return make_error_response(
             code=status.HTTP_404_NOT_FOUND,
@@ -309,7 +317,7 @@ async def get_shipments(
     )
 
 
-@app.get("/api/v1/shipments/{shipment_id}", response_model=ShipmentResponse, dependencies=[Depends(verify_headers)])
+@app.get("/api/v1/shipments/{shipment_id}", response_model=ShipmentResponse, responses=error_responses, dependencies=[Depends(verify_headers)])
 async def get_shipment_by_id(request: Request, shipment_id: str, db: Session = Depends(get_db)):
     correlation_id = get_correlation_id(request)
     
@@ -325,7 +333,7 @@ async def get_shipment_by_id(request: Request, shipment_id: str, db: Session = D
     return _format_shipment(shipment)
 
 
-@app.patch("/api/v1/shipments/{shipment_id}", response_model=ShipmentUpdateResponse, dependencies=[Depends(verify_headers)])
+@app.patch("/api/v1/shipments/{shipment_id}", response_model=ShipmentUpdateResponse, responses=error_responses, dependencies=[Depends(verify_headers)])
 async def update_shipment_status(request: Request, shipment_id: str, update_data: ShipmentUpdate, db: Session = Depends(get_db)):
     correlation_id = get_correlation_id(request)
     
@@ -419,7 +427,7 @@ async def update_shipment_status(request: Request, shipment_id: str, update_data
     )
 
 
-@app.get("/api/v1/shipments/{shipment_id}/history", dependencies=[Depends(verify_headers)])
+@app.get("/api/v1/shipments/{shipment_id}/history", response_model=ShipmentHistoryResponse, responses=error_responses, dependencies=[Depends(verify_headers)])
 async def get_shipment_history(request: Request, shipment_id: str, db: Session = Depends(get_db)):
     correlation_id = get_correlation_id(request)
     

@@ -115,3 +115,11 @@ class ErrorResponse(CamelModel):
     message: str
     details: Optional[List[ErrorDetail]] = None
     correlation_id: Optional[str] = None
+
+class ShipmentHistoryEvent(CamelModel):
+    status: ShipmentStatus
+    created_at: datetime
+
+class ShipmentHistoryResponse(CamelModel):
+    shipment_id: str
+    history: List[ShipmentHistoryEvent]
