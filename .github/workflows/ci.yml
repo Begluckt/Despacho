@@ -44,11 +44,11 @@ jobs:
       - name: Descargar el código
         uses: actions/checkout@v4
 
-      # Paso 2: Instalar la versión de Python que necesitamos (3.10 en este caso).
+      # Paso 2: Instalar la versión de Python que necesitamos (3.12 para que coincida con el entorno local).
       - name: Configurar Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.12'
 
       # Paso 3: Instalar todas las librerías de nuestro proyecto (FastAPI, pytest, etc).
       - name: Instalar dependencias
