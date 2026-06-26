@@ -26,8 +26,16 @@ Este documento es de uso interno del equipo para hacer seguimiento de los ítems
   - **¿Cómo funciona?** Creamos un archivo YAML (configuración) en la carpeta especial `.github/workflows/`. GitHub detecta esta carpeta automáticamente en su nube. No tuvimos que instalar ninguna aplicación externa.
   - **¿Qué hace exactamente?** Le dice a GitHub: *"Cada vez que alguien de nuestro grupo haga un `push` a las ramas `main` o `E3-dev`, préstame un servidor Ubuntu, instala Python, instala nuestras librerías (`requirements.txt`), y corre automáticamente el comando `pytest` para probar que nuestro código funcione correctamente."*
   - **¿Por qué lo hicimos?** Si en el futuro alguien hace un cambio que rompe la aplicación, GitHub pondrá una "X" roja antes de que se publique en producción. Además, es un requisito clave para la máxima nota en Arquitectura Cloud.
+  - **Refinamiento Técnico (PostgreSQL en Actions):** Descubrimos que nuestras pruebas fallaban en la nube porque usamos tipos de datos exclusivos de PostgreSQL (como `JSONB`). Lo solucionamos configurando los "Services" de GitHub Actions para que levante un motor real de PostgreSQL 15, cree la base de datos, corra los tests y luego destruya todo. ¡Entorno 100% aislado!
 
-### 5. Documentación
+### 5. Refinamiento de Contratos y Arquitectura - *¡Nuevo!*
+- [x] **Refactorización Respuesta 201:** Se detectó que el endpoint `POST /api/v1/shipments` devolvía un arreglo plano, lo que es mala práctica. Se refactorizó el código (usando un nuevo esquema Pydantic) para devolver un objeto JSON estructurado: `{"shipmentIds": ["SHP-xxx"]}`.
+- [x] **Sincronización Total de Contratos:** Para no perder puntos en evaluación, actualizamos todos los frentes tras el cambio:
+  - Generamos nuevamente el `openapi.yaml` directamente de la memoria de FastAPI mediante un script, garantizando CERO errores humanos en el Swagger.
+  - Actualizamos manualmente el contrato PDF/LaTeX (`G6_Contrato_API_Despacho_v1.3.tex`) para que refleje esta nueva estructura.
+- [x] **Quality Gate (Validación Estricta):** Implementamos una prueba automatizada (`test_openapi_is_up_to_date`) en `test_api.py`. Si alguien hace un cambio en la API y olvida actualizar el contrato `openapi.yaml`, **los tests fallan** y exigen correr `python scripts/dump_openapi.py`. ¡Garantía de calidad nivel senior!
+
+### 6. Documentación
 - [x] Actualizado el `README.md` explicando detalladamente la ejecución local, las pruebas automatizadas y la nueva estrategia de Integración Continua (CI).
 
 ---

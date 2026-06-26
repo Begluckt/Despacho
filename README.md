@@ -7,6 +7,15 @@ Este repositorio contiene la especificación, documentación técnica y el proto
 
 El microservicio se encarga de la gestión del ciclo de vida de los envíos (*Shipments*), desde la recepción de la orden de despacho hasta la entrega final al cliente o su devolución, integrando flujos síncronos (REST) y asíncronos (Eventos/Kafka).
 
+## Calidad y Contratos (Quality Gate)
+Para asegurar que el contrato oficial siempre coincida con el código (esquemas Pydantic), se implementó una prueba automatizada (`test_openapi_is_up_to_date`) que fallará si realizas cambios y olvidas actualizar el archivo `openapi.yaml`.
+
+Si esto ocurre, simplemente debes ejecutar el script automático desde la raíz del proyecto para actualizar el Swagger:
+```bash
+python scripts/dump_openapi.py
+```
+Esto sobrescribirá el archivo `openapi.yaml` garantizando que todo el equipo (y otros grupos mediante Prism) usen siempre el contrato más reciente y sin errores humanos.
+
 ---
 
 ## 📂 Estructura del Proyecto

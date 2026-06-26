@@ -92,10 +92,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: string
-                title: Response Create Shipment Api V1 Shipments Post
+                $ref: '#/components/schemas/ShipmentCreateResponse'
         '400':
           content:
             application/json:
@@ -677,6 +674,18 @@ components:
       - city
       - packages
       title: ShipmentCreate
+    ShipmentCreateResponse:
+      properties:
+        shipmentIds:
+          items:
+            type: string
+          type: array
+          title: Shipmentids
+          description: Lista de IDs de despachos creados
+      type: object
+      required:
+      - shipmentIds
+      title: ShipmentCreateResponse
     ShipmentHistoryEvent:
       properties:
         status:
