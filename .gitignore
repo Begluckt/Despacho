@@ -26,3 +26,6 @@ env/
 # Databases
 *.db
 *.sqlite3
+
+# Secrets
+.env
