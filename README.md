@@ -98,19 +98,23 @@ Este servicio ahora utiliza **Supabase (PostgreSQL)** como base de datos. Para e
    ```
    El servidor estará disponible en `http://localhost:8000`.
 
-### Opción 3: Pruebas Automatizadas
+### Opción 3: Pruebas Automatizadas y CI/CD (GitHub Actions)
 
-El repositorio cuenta con una suite de pruebas para verificar el motor de precios y la salud de la API.
+El repositorio cuenta con una suite de pruebas para verificar el motor de precios y la salud de la API. Estas pruebas evalúan los escenarios principales y validación de errores.
 
-1. **Instalar dependencias de pruebas:**
+**Ejecución Local:**
+1. Instalar dependencias de pruebas:
    ```bash
    pip install -r requirements.txt
    ```
-
-2. **Ejecutar pytest:**
+2. Ejecutar pytest:
    ```bash
    pytest tests/
    ```
+
+**Integración Continua (CI):**
+El proyecto implementa un pipeline automatizado mediante **GitHub Actions** (`.github/workflows/ci.yml`). 
+Cada vez que se realiza un *push* a las ramas `main` o `E3-dev`, GitHub levanta un servidor temporal, instala las dependencias y ejecuta la suite de `pytest`. Si las pruebas fallan, alerta al equipo para evitar que errores lleguen a producción.
 
 ---
 

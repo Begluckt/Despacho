@@ -7,7 +7,8 @@ Este documento es de uso interno del equipo para hacer seguimiento de los ítems
 ### 1. Implementación de Endpoints y Pruebas (100% de la rúbrica)
 - [x] Endpoints completamente alineados al contrato OpenAPI.
 - [x] Gestión correcta del ciclo de vida del despacho, cálculo de costos, órdenes e historial.
-- [x] Pruebas Funcionales: Tenemos nuestra colección de Postman configurada (`tests/postman_collection.json`). **Estrategia acordada:** Haremos la demostración en vivo (live-demo) utilizando esta colección de peticiones reales para cumplir el hito, ahorrándonos programación innecesaria de scripts de prueba.
+- [x] Pruebas Funcionales: Tenemos nuestra colección de Postman configurada (`tests/postman_collection.json`). **Estrategia acordada:** Haremos la demostración en vivo (live-demo) utilizando esta colección de peticiones reales para cumplir el hito.
+- [x] Agregamos pruebas automatizadas en código con `pytest` (`tests/test_api.py`) para validar los "Happy Paths" de la API y manejo de errores.
 
 ### 2. Seguridad y Configuración (100% de la rúbrica)
 - [x] Eliminadas credenciales quemadas (*hardcoded*) de base de datos en `database.py`.
@@ -19,13 +20,19 @@ Este documento es de uso interno del equipo para hacer seguimiento de los ítems
 - [x] Verificado que el código (`app/schemas.py`) cumple estrictamente con el formato estándar exigido en la `guia-y-lineamiento-de-desarrollo.md` (formato corto sin `status` ni `timestamp`).
 - [x] Creada la versión `v1.3` del contrato en LaTeX (`docs/contratos/v1.3/G6_Contrato_API_Despacho_v1.3.tex`) para reflejar correctamente este lineamiento y corregir los ejemplos desactualizados de la `v1.2`.
 
+### 4. Automatización y CI/CD (100% de la rúbrica) - *¡Nuevo!*
+- [x] **Implementación de GitHub Actions (`.github/workflows/ci.yml`)**: 
+  - **¿Qué es esto?** Es nuestro pipeline de Integración Continua (CI).
+  - **¿Cómo funciona?** Creamos un archivo YAML (configuración) en la carpeta especial `.github/workflows/`. GitHub detecta esta carpeta automáticamente en su nube. No tuvimos que instalar ninguna aplicación externa.
+  - **¿Qué hace exactamente?** Le dice a GitHub: *"Cada vez que alguien de nuestro grupo haga un `push` a las ramas `main` o `E3-dev`, préstame un servidor Ubuntu, instala Python, instala nuestras librerías (`requirements.txt`), y corre automáticamente el comando `pytest` para probar que nuestro código funcione correctamente."*
+  - **¿Por qué lo hicimos?** Si en el futuro alguien hace un cambio que rompe la aplicación, GitHub pondrá una "X" roja antes de que se publique en producción. Además, es un requisito clave para la máxima nota en Arquitectura Cloud.
+
+### 5. Documentación
+- [x] Actualizado el `README.md` explicando detalladamente la ejecución local, las pruebas automatizadas y la nueva estrategia de Integración Continua (CI).
+
 ---
 
 ## ⏳ Próximos Pasos (Pendientes)
 
-### 3. Automatización (CI/CD)
-- [ ] Implementar un pipeline de GitHub Actions (ej. para chequear estilo, tests base o build).
-
-### 4. Documentación y Despliegue
-- [ ] Actualizar `README.md` indicando dónde está el nuevo servicio desplegado y cómo levantarlo en Render.
-- [ ] Conectar Render a esta nueva rama (`main` o `E3-dev`) inyectando las variables de entorno.
+### Despliegue en la Nube
+- [ ] Conectar o validar que Render está leyendo correctamente esta nueva rama (`main` o `E3-dev`) e inyectando las variables de entorno correspondientes para el Despliegue Continuo (CD).
