@@ -21,6 +21,23 @@ jobs:
     # Le decimos a GitHub que nos preste una máquina virtual con Ubuntu (Linux) para trabajar.
     runs-on: ubuntu-latest
 
+    # Levantamos una base de datos PostgreSQL de usar y tirar (solo dura lo que dura el test)
+    # Esto es necesario porque usamos tipos de datos exclusivos de Postgres (como JSONB)
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     # Los 'steps' (pasos) son las instrucciones detalladas para la máquina.
     steps:
       # Paso 1: Clonar/descargar nuestro código desde el repositorio a la máquina virtual.
@@ -42,11 +59,9 @@ jobs:
       # Paso 4: Ejecutar nuestras pruebas. 
       # Si fallan, GitHub marca el trabajo con una X roja. Si pasan, con un ✔️ verde.
       - name: Ejecutar pruebas (Pytest)
-        # Inyectamos una variable de entorno temporal solo para este paso.
-        # Usamos una base de datos SQLite en memoria RAM (sqlite:///:memory:).
-        # Así pasamos la validación de inicio sin conectarnos a la BD de producción,
-        # lo cual es una excelente práctica para no ensuciar datos reales con tests.
+        # Nos conectamos a la BD temporal de Postgres que creamos arriba.
+        # Es 100% aislada de producción y se destruye al terminar.
         env:
-          DATABASE_URL: "sqlite:///:memory:"
+          DATABASE_URL: "postgresql://test_user:test_password@localhost:5432/test_db"
         run: |
           pytest
