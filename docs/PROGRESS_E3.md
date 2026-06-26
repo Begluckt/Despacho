@@ -15,6 +15,10 @@ Este documento es de uso interno del equipo para hacer seguimiento de los ítems
 - [x] Añadido archivo `.env.example` para facilitar la inyección de variables de entorno (tanto locales como en producción).
 - [x] Validación estricta que impide que la API se levante si no detecta `DATABASE_URL`.
 
+### 3. Manejo de Errores y Contratos (100% de la rúbrica)
+- [x] Verificado que el código (`app/schemas.py`) cumple estrictamente con el formato estándar exigido en la `guia-y-lineamiento-de-desarrollo.md` (formato corto sin `status` ni `timestamp`).
+- [x] Creada la versión `v1.3` del contrato en LaTeX (`docs/contratos/v1.3/G6_Contrato_API_Despacho_v1.3.tex`) para reflejar correctamente este lineamiento y corregir los ejemplos desactualizados de la `v1.2`.
+
 ---
 
 ## ⏳ Próximos Pasos (Pendientes)
