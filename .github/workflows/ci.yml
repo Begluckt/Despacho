@@ -1,0 +1,67 @@
+name: CI/CD Pipeline
+
+# El bloque 'on' define los "gatillos" (triggers).
+# Le dice a GitHub: "¿CUÁNDO debo ejecutar este flujo?"
+on:
+  # "Ejecútate cuando alguien suba código (haga push)..."
+  push:
+    # "...específicamente si lo suben a la rama 'main' o a la rama 'E3-dev'."
+    branches:
+      - main
+      - E3-dev
+  # "También ejecútate cuando alguien intente fusionar código (Pull Request) hacia 'main'."
+  pull_request:
+    branches:
+      - main
+
+# El bloque 'jobs' (trabajos) contiene lo que realmente se va a hacer.
+jobs:
+  # Creamos un trabajo llamado 'test'
+  test:
+    # Le decimos a GitHub que nos preste una máquina virtual con Ubuntu (Linux) para trabajar.
+    runs-on: ubuntu-latest
+
+    # Levantamos una base de datos PostgreSQL de usar y tirar (solo dura lo que dura el test)
+    # Esto es necesario porque usamos tipos de datos exclusivos de Postgres (como JSONB)
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    # Los 'steps' (pasos) son las instrucciones detalladas para la máquina.
+    steps:
+      # Paso 1: Clonar/descargar nuestro código desde el repositorio a la máquina virtual.
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      # Paso 2: Instalar la versión de Python que necesitamos (3.12 para que coincida con el entorno local).
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # Paso 3: Instalar todas las librerías de nuestro proyecto (FastAPI, pytest, etc).
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Paso 4: Ejecutar nuestras pruebas. 
+      # Si fallan, GitHub marca el trabajo con una X roja. Si pasan, con un ✔️ verde.
+      - name: Ejecutar pruebas (Pytest)
+        # Nos conectamos a la BD temporal de Postgres que creamos arriba.
+        # Es 100% aislada de producción y se destruye al terminar.
+        env:
+          DATABASE_URL: "postgresql://test_user:test_password@localhost:5432/test_db"
+        run: |
+          pytest

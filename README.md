@@ -1,11 +1,22 @@
 # Servicio de Despacho y Logística — Grupo 6 (Marketplace Cloud)
 
-[![Deploy Status](https://img.shields.io/badge/Render-Live-brightgreen)](https://g6-despacho.onrender.com/docs)
-**🔗 Link API en Producción:** [https://g6-despacho.onrender.com/docs](https://g6-despacho.onrender.com/docs)
+[![Deploy Status](https://img.shields.io/badge/Render-Mock_E2-blue)](https://g6-despacho.onrender.com/docs)
+[![Deploy Status](https://img.shields.io/badge/Render-App_Oficial_E3-brightgreen)](https://g6-despacho-oficial.onrender.com/docs)
+**🔗 Link Mock (E2):** [https://g6-despacho.onrender.com/docs](https://g6-despacho.onrender.com/docs)
+**🔗 Link API Oficial (E3):** [https://g6-despacho-oficial.onrender.com/docs](https://g6-despacho-oficial.onrender.com/docs) *(Reemplazar con link final de Render)*
 
 Este repositorio contiene la especificación, documentación técnica y el prototipo funcional (mock) del **Servicio de Despacho y Logística** (Grupo 6) diseñado para el ecosistema del Marketplace Cloud.
 
 El microservicio se encarga de la gestión del ciclo de vida de los envíos (*Shipments*), desde la recepción de la orden de despacho hasta la entrega final al cliente o su devolución, integrando flujos síncronos (REST) y asíncronos (Eventos/Kafka).
+
+## Calidad y Contratos (Quality Gate)
+Para asegurar que el contrato oficial siempre coincida con el código (esquemas Pydantic), se implementó una prueba automatizada (`test_openapi_is_up_to_date`) que fallará si realizas cambios y olvidas actualizar el archivo `openapi.yaml`.
+
+Si esto ocurre, simplemente debes ejecutar el script automático desde la raíz del proyecto para actualizar el Swagger:
+```bash
+python scripts/dump_openapi.py
+```
+Esto sobrescribirá el archivo `openapi.yaml` garantizando que todo el equipo (y otros grupos mediante Prism) usen siempre el contrato más reciente y sin errores humanos.
 
 ---
 
@@ -98,19 +109,23 @@ Este servicio ahora utiliza **Supabase (PostgreSQL)** como base de datos. Para e
    ```
    El servidor estará disponible en `http://localhost:8000`.
 
-### Opción 3: Pruebas Automatizadas
+### Opción 3: Pruebas Automatizadas y CI/CD (GitHub Actions)
 
-El repositorio cuenta con una suite de pruebas para verificar el motor de precios y la salud de la API.
+El repositorio cuenta con una suite de pruebas para verificar el motor de precios y la salud de la API. Estas pruebas evalúan los escenarios principales y validación de errores.
 
-1. **Instalar dependencias de pruebas:**
+**Ejecución Local:**
+1. Instalar dependencias de pruebas:
    ```bash
    pip install -r requirements.txt
    ```
-
-2. **Ejecutar pytest:**
+2. Ejecutar pytest:
    ```bash
    pytest tests/
    ```
+
+**Integración Continua (CI):**
+El proyecto implementa un pipeline automatizado mediante **GitHub Actions** (`.github/workflows/ci.yml`). 
+Cada vez que se realiza un *push* a las ramas `main` o `E3-dev`, GitHub levanta un servidor temporal, instala las dependencias y ejecuta la suite de `pytest`. Si las pruebas fallan, alerta al equipo para evitar que errores lleguen a producción.
 
 ---
 

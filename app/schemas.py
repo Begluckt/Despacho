@@ -55,6 +55,9 @@ class ShipmentCreate(CamelModel):
             raise ValueError("El campo no puede estar vacío o contener solo espacios")
         return v.strip()
 
+class ShipmentCreateResponse(CamelModel):
+    shipment_ids: List[str] = Field(..., description="Lista de IDs de despachos creados")
+
 class ShipmentResponse(CamelModel):
     shipment_id: str
     order_id: str

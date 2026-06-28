@@ -24,7 +24,8 @@ from app.schemas import (
     QuoteRequest,
     QuoteResponse,
     OriginCD,
-    ShipmentHistoryResponse
+    ShipmentHistoryResponse,
+    ShipmentCreateResponse
 )
 
 # Inicializar Base de Datos (crea la tabla si no existe)
@@ -32,8 +33,8 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="API de Despacho y Logística --- Grupo 6",
-    description="Servicio de gestión de despachos v1.2",
-    version="1.2.0"
+    description="Servicio de gestión de despachos v1.3",
+    version="1.3.0"
 )
 
 # Transiciones de estado permitidas
@@ -155,7 +156,7 @@ async def quote_shipment(request: QuoteRequest):
     return QuoteResponse(total_shipping_cost=total_cost, currency="CLP")
 
 
-@app.post("/api/v1/shipments", response_model=List[str], status_code=status.HTTP_201_CREATED, responses=error_responses, dependencies=[Depends(verify_headers)])
+@app.post("/api/v1/shipments", response_model=ShipmentCreateResponse, status_code=status.HTTP_201_CREATED, responses=error_responses, dependencies=[Depends(verify_headers)])
 async def create_shipment(request: Request, shipment_data: ShipmentCreate, db: Session = Depends(get_db)):
     correlation_id = get_correlation_id(request)
             
@@ -224,7 +225,7 @@ async def create_shipment(request: Request, shipment_data: ShipmentCreate, db: S
         db.add(outbox_event)
         
     db.commit()
-    return shipment_ids
+    return ShipmentCreateResponse(shipment_ids=shipment_ids)
 
 def _format_shipment(s: Shipment) -> dict:
     if s.created_at and not s.created_at.tzinfo:
@@ -458,7 +459,7 @@ async def get_shipment_history(request: Request, shipment_id: str, db: Session =
     }
 
 
-@app.api_route("/", methods=["GET", "HEAD"])
+@app.api_route("/", methods=["GET", "HEAD"], operation_id="root_endpoint")
 async def root():
     return {"message": "API de Despacho y Logística --- Grupo 6 is running. Visit /docs for documentation."}
 
